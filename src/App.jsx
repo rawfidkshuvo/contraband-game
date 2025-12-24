@@ -1296,6 +1296,14 @@ export default function ContrabandGame() {
     return () => unsubscribe();
   }, []);
 
+  // --- Session Restoration ---
+  useEffect(() => {
+    const savedRoomId = localStorage.getItem("contraband_roomId");
+    if (savedRoomId) {
+      setRoomId(savedRoomId);
+    }
+  }, []);
+
   useEffect(() => {
     if (!roomId || !user) return;
     const unsub = onSnapshot(
@@ -1307,6 +1315,7 @@ export default function ContrabandGame() {
             // Player was likely kicked or game ended
             setRoomId("");
             setView("menu");
+            localStorage.removeItem("contraband_roomId");
             setError("Connection Lost or Room Closed.");
             return;
           }
@@ -1324,6 +1333,7 @@ export default function ContrabandGame() {
         } else {
           setRoomId("");
           setView("menu");
+          localStorage.removeItem("contraband_roomId");
           setError("Room Closed.");
         }
       }
@@ -1394,6 +1404,7 @@ export default function ContrabandGame() {
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", newId),
       initialData
     );
+    localStorage.setItem("contraband_roomId", newId);
     setRoomId(newId);
     setLoading(false);
   };
@@ -1428,6 +1439,7 @@ export default function ContrabandGame() {
         ready: false,
       };
       await updateDoc(ref, { players: arrayUnion(newPlayer) });
+      localStorage.setItem("contraband_roomId", roomCodeInput);
       setRoomId(roomCodeInput);
     } catch (e) {
       setError(e.message);
@@ -1452,6 +1464,7 @@ export default function ContrabandGame() {
     } catch (e) {
       console.error(e);
     }
+    localStorage.removeItem("contraband_roomId");
     setRoomId("");
     setView("menu");
     setShowLeaveConfirm(false);
@@ -2453,18 +2466,7 @@ export default function ContrabandGame() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => !shopDisabled && setShowShop(true)}
-              disabled={shopDisabled}
-              className={`p-2 rounded-full transition-all ${
-                !shopDisabled
-                  ? "bg-yellow-600 text-black animate-pulse hover:bg-yellow-500"
-                  : "bg-zinc-800 text-zinc-600 cursor-not-allowed opacity-50"
-              }`}
-            >
-              <ShoppingBag size={20} />
-            </button>
-            <div className="h-8 w-[1px] bg-zinc-700 mx-2"></div>
+            {/* Removed Shop Icon Button from Header */}
             <button
               onClick={() => setShowLogs(true)}
               className="p-2 hover:bg-zinc-800 rounded text-zinc-400"
@@ -2672,17 +2674,30 @@ export default function ContrabandGame() {
                 </button>
 
                 {gameState.turnState === "SHOPPING" && (
-                  <button
-                    onClick={toggleReady}
-                    disabled={me.ready}
-                    className={`mt-2 py-2 px-4 rounded font-bold transition-all ${
-                      me.ready
-                        ? "bg-green-600/50 text-white/50 cursor-not-allowed"
-                        : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
-                    }`}
-                  >
-                    {me.ready ? "READY" : "MARKET DONE"}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => !shopDisabled && setShowShop(true)}
+                      disabled={shopDisabled}
+                      className={`mt-2 w-full py-2 rounded text-xs border flex items-center justify-center gap-2 transition-colors ${
+                        !shopDisabled
+                          ? "bg-yellow-900/20 hover:bg-yellow-900/30 text-yellow-500 border-yellow-500/50"
+                          : "bg-zinc-800 text-zinc-600 border-zinc-700 cursor-not-allowed"
+                      }`}
+                    >
+                      <ShoppingBag size={12} /> Open Black Market
+                    </button>
+                    <button
+                      onClick={toggleReady}
+                      disabled={me.ready}
+                      className={`mt-2 py-2 px-4 rounded font-bold transition-all ${
+                        me.ready
+                          ? "bg-green-600/50 text-white/50 cursor-not-allowed"
+                          : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
+                      }`}
+                    >
+                      {me.ready ? "READY" : "MARKET DONE"}
+                    </button>
+                  </>
                 )}
               </div>
 
