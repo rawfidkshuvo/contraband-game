@@ -1575,6 +1575,7 @@ export default function ContrabandGame() {
       p.id === user.uid ? { ...p, ready: !p.ready } : p
     );
 
+    // LOGIC 1: End of Market Phase
     if (
       gameState.status === "playing" &&
       gameState.turnState === "SHOPPING" &&
@@ -1595,6 +1596,21 @@ export default function ContrabandGame() {
       );
       return;
     }
+
+    // LOGIC 2: End of Round Summary (NEW)
+    if (
+      gameState.status === "playing" &&
+      gameState.turnState === "ROUND_SUMMARY"
+    ) {
+      // If everyone is ready, proceed
+      if (players.every((p) => p.ready)) {
+        // Trigger the next round logic
+        await startNextRound();
+        return;
+      }
+    }
+
+    // Standard ready toggle update
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
       { players }
@@ -2093,12 +2109,29 @@ export default function ContrabandGame() {
       (p) => p.id !== inspector.id && p.loadedCrate !== null
     );
 
+    // ... inside inspectCrate, replacing the pending.length check ...
+
     if (pending.length === 0) {
-      setTimeout(
-        () => finishRound(players, stats, logs, fb, currentEvent),
-        3500
+      // 1. Create the history entry for this round
+      const historyEntry = {
+        stats: stats,
+        event: currentEvent || EVENTS.NORMAL,
+      };
+
+      // 2. Update DB: Commit history and switch to ROUND_SUMMARY
+      await updateDoc(
+        doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
+        {
+          players,
+          logs: arrayUnion(...logs),
+          currentRoundStats: stats,
+          roundHistory: arrayUnion(historyEntry), // Save history immediately
+          turnState: "ROUND_SUMMARY", // <--- NEW STATE
+          feedbackTrigger: fb,
+        }
       );
     } else {
+      // Standard update if round isn't over
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
@@ -2109,6 +2142,96 @@ export default function ContrabandGame() {
         }
       );
     }
+  };
+
+  const startNextRound = async () => {
+    const nextRound = gameState.currentRound + 1;
+
+    // --- SCENARIO A: GAME OVER ---
+    if (nextRound > totalRounds) {
+      // Calculate Final Scores
+      const finalScores = gameState.players
+        .map((p) => {
+          return {
+            ...p,
+            finalScore: Math.floor(p.coins - BANK_LOAN),
+            ready: false,
+          };
+        })
+        .sort((a, b) => b.finalScore - a.finalScore);
+
+      await updateDoc(
+        doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
+        {
+          players: finalScores,
+          status: "finished",
+          turnState: "IDLE",
+          winner: finalScores[0].name,
+          feedbackTrigger: {
+            id: Date.now(),
+            type: "success",
+            message: "GAME OVER",
+            subtext: `${finalScores[0].name} wins!`,
+          },
+        }
+      );
+      return;
+    }
+
+    // --- SCENARIO B: SETUP NEXT ROUND ---
+    let nextInspectorIndex = gameState.inspectorOrder[nextRound - 1];
+    let deck = [...gameState.deck];
+
+    // Generate Event
+    const eventKeys = Object.keys(EVENTS);
+    const randomEventKey =
+      eventKeys[Math.floor(Math.random() * eventKeys.length)];
+    const nextEvent = EVENTS[randomEventKey];
+
+    // Assign Roles & Hands
+    const playersWithRoles = assignRandomRoles(gameState.players);
+    const nextInspectorId = playersWithRoles[nextInspectorIndex].id;
+
+    const nextRoundStats = {};
+    playersWithRoles.forEach((p) => {
+      nextRoundStats[p.id] = {
+        role: p.role,
+        isInspector: p.id === nextInspectorId,
+        income: 0,
+        expense: 0,
+        transactions: [],
+        marketItems: [],
+        roleBonus: 0,
+      };
+    });
+
+    const nextPlayers = playersWithRoles.map((p) => {
+      const hand = [...p.hand];
+      const limit = p.upgrades?.includes("POCKETS") ? 7 : 6;
+      while (hand.length < limit && deck.length > 0) {
+        const card = drawSafeCard(deck, hand);
+        if (card) hand.push(card);
+      }
+      return { ...p, hand, loadedCrate: null, ready: false }; // Reset ready status
+    });
+
+    await updateDoc(
+      doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
+      {
+        players: nextPlayers,
+        deck,
+        inspectorIndex: nextInspectorIndex,
+        currentRound: nextRound,
+        currentRoundStats: nextRoundStats,
+        turnState: "SHOPPING", // Start next round
+        marketEvent: nextEvent,
+        logs: arrayUnion({
+          id: Date.now().toString(),
+          text: `Round ${nextRound} Started. Event: ${nextEvent.name}`,
+          type: "neutral",
+        }),
+      }
+    );
   };
 
   const finishRound = async (players, stats, logs, fb, event) => {
@@ -2722,12 +2845,56 @@ export default function ContrabandGame() {
                     <ShieldCheck size={32} />
                     <span>You are the Inspector. Check crates above.</span>
                   </div>
-                ) : me.loadedCrate ? (
-                  <div className="h-full flex flex-col items-center justify-center text-emerald-400 gap-2 border-2 border-emerald-900 rounded-xl bg-emerald-900/10">
-                    <CheckCircle size={32} />
-                    <div className="font-bold">Crate Locked</div>
-                    <div className="text-xs text-emerald-600">
-                      Waiting for inspection...
+                ) : // ... inside the Bottom Player Area ...
+
+                // REPLACE THIS BLOCK:
+                /* ) : me.loadedCrate ? (
+  <div className="h-full flex flex-col items-center justify-center text-emerald-400 gap-2 border-2 border-emerald-900 rounded-xl bg-emerald-900/10">
+    <CheckCircle size={32} />
+    <div className="font-bold">Crate Locked</div>
+    <div className="text-xs text-emerald-600">
+      Waiting for inspection...
+    </div>
+  </div>
+)
+*/
+
+                // WITH THIS NEW BLOCK:
+                me.loadedCrate ? (
+                  <div className="h-full flex flex-col items-center justify-center w-full">
+                    {/* Display the Locked Cards */}
+                    <div className="flex gap-2 justify-center mb-2 grayscale-[0.3] scale-90 origin-bottom">
+                      {me.loadedCrate.cards.map((cId, i) => (
+                        <div key={i} className="relative group">
+                          <Card typeId={cId} small={false} />
+                          {/* Lock Overlay */}
+                          <div className="absolute inset-0 bg-black/20 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Lock className="text-white/80 drop-shadow-md" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-3 bg-zinc-900/80 px-4 py-2 rounded-full border border-emerald-500/30 text-xs shadow-xl backdrop-blur-md">
+                      <span className="flex items-center gap-1 text-emerald-400 font-bold">
+                        <Lock size={12} /> LOCKED
+                      </span>
+                      <div className="w-px h-3 bg-zinc-700"></div>
+                      <span className="text-zinc-400">
+                        Declared:{" "}
+                        <strong className="text-white">
+                          {GOODS[me.loadedCrate.declaration]?.name}
+                        </strong>
+                      </span>
+                      {me.loadedCrate.bribe > 0 && (
+                        <>
+                          <div className="w-px h-3 bg-zinc-700"></div>
+                          <span className="flex items-center gap-1 text-yellow-500 font-mono">
+                            <Coins size={12} /> ${me.loadedCrate.bribe}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 ) : gameState.turnState === "LOADING" ? (
@@ -2933,6 +3100,76 @@ export default function ContrabandGame() {
                     Waiting for squad...
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+          {/* Round Summary Overlay */}
+          {/* Round Summary Overlay */}
+          {gameState.turnState === "ROUND_SUMMARY" && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+              <div className="w-full max-w-4xl bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="p-4 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-white">
+                    Round {gameState.currentRound} Complete
+                  </h2>
+                  <div className="text-xs text-zinc-500 uppercase tracking-widest">
+                    {gameState.currentRound >= totalRounds
+                      ? "Game Sequence Complete"
+                      : "Next Event Loading..."}
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto">
+                  <ReportCard
+                    players={gameState.players}
+                    // Force the tab to be the specific round index
+                    roundData={gameState.roundHistory}
+                    isFinal={false}
+                  />
+                </div>
+
+                <div className="p-6 bg-zinc-950 border-t border-zinc-800 flex justify-center">
+                  <button
+                    onClick={toggleReady}
+                    className={`px-8 py-3 rounded-xl font-bold transition-all shadow-lg flex items-center gap-2 ${
+                      me.ready
+                        ? "bg-green-600 text-white shadow-green-900/20"
+                        : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20"
+                    }`}
+                  >
+                    {me.ready ? (
+                      <>
+                        <CheckCircle size={20} /> Waiting for others...
+                      </>
+                    ) : (
+                      <>
+                        {gameState.currentRound >= totalRounds ? (
+                          <>
+                            Show Final Results <Crown size={20} />
+                          </>
+                        ) : (
+                          <>
+                            Start Round {gameState.currentRound + 1}{" "}
+                            <ChevronRight size={20} />
+                          </>
+                        )}
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Show who is ready */}
+                <div className="pb-4 bg-zinc-950 flex justify-center gap-2">
+                  {gameState.players.map((p) => (
+                    <div
+                      key={p.id}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        p.ready ? "bg-green-500" : "bg-zinc-700"
+                      }`}
+                      title={p.name}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           )}
