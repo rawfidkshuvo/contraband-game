@@ -101,7 +101,7 @@ const ROLES = {
   SNITCH: {
     id: "SNITCH",
     name: "Snitch",
-    desc: "Earn $500 whenever another player is fined.",
+    desc: "Earn $1000 whenever another player is fined.",
     icon: Eye,
     color: "text-yellow-400",
   },
@@ -273,7 +273,7 @@ const generateDeck = (playerCount) => {
     CHIP: 4 * playerCount,
     WEAPON: 4 * playerCount,
     NARCO: 4 * playerCount,
-    TRAP: 1 * playerCount, //chaged from 2 to 1
+    TRAP: 2 * playerCount,
   };
   Object.entries(counts).forEach(([type, count]) => {
     for (let i = 0; i < count; i++) deck.push(type);
@@ -1515,10 +1515,15 @@ export default function ContrabandGame() {
     const deck = shuffle(generateDeck(gameState.players.length));
     const inspectorOrder = shuffle(gameState.players.map((_, i) => i));
 
-    const firstInspectorId = gameState.players[inspectorOrder[0]].id;
+    const firstInspectorIdx = inspectorOrder[0]; // Get the index
+    const firstInspectorId = gameState.players[firstInspectorIdx].id;
     const initialRoundStats = {};
 
     let players = assignRandomRoles(gameState.players);
+
+    // --- CHANGE: Force Inspector role to null ---
+    players[firstInspectorIdx].role = null;
+
     players = players.map((p) => {
       const hand = [];
       const handSize = 6;
@@ -1528,7 +1533,7 @@ export default function ContrabandGame() {
       }
 
       initialRoundStats[p.id] = {
-        role: p.role,
+        role: p.role, // This will now be null for inspector
         isInspector: p.id === firstInspectorId,
         income: 0,
         expense: 0,
@@ -1553,7 +1558,7 @@ export default function ContrabandGame() {
         players,
         deck,
         inspectorOrder,
-        inspectorIndex: inspectorOrder[0],
+        inspectorIndex: firstInspectorIdx,
         currentRound: 1,
         currentRoundStats: initialRoundStats,
         roundHistory: [],
@@ -2076,13 +2081,13 @@ export default function ContrabandGame() {
           snitchBonus.forEach((s) => {
             const sIdx = players.findIndex((pl) => pl.id === s.id);
             if (sIdx > -1) {
-              players[sIdx].coins += 500;
+              players[sIdx].coins += 1000;
               stats = getUpdatedStats(stats, s.id, {
-                income: 500,
-                roleBonus: 500,
+                income: 1000,
+                roleBonus: 1000,
                 transaction: {
                   label: "Snitch Reward",
-                  amount: 500,
+                  amount: 1000,
                   detail: `${target.name} busted`,
                 },
               });
@@ -2147,9 +2152,10 @@ export default function ContrabandGame() {
   const startNextRound = async () => {
     const nextRound = gameState.currentRound + 1;
 
-    // --- SCENARIO A: GAME OVER ---
+    // ... [Previous Game Over Logic stays the same] ...
     if (nextRound > totalRounds) {
-      // Calculate Final Scores
+      // ... copy existing Game Over logic here ...
+      // (Snippet omitted for brevity, keep existing code)
       const finalScores = gameState.players
         .map((p) => {
           return {
@@ -2189,7 +2195,11 @@ export default function ContrabandGame() {
     const nextEvent = EVENTS[randomEventKey];
 
     // Assign Roles & Hands
-    const playersWithRoles = assignRandomRoles(gameState.players);
+    let playersWithRoles = assignRandomRoles(gameState.players);
+
+    // --- CHANGE: Force Inspector role to null ---
+    playersWithRoles[nextInspectorIndex].role = null;
+
     const nextInspectorId = playersWithRoles[nextInspectorIndex].id;
 
     const nextRoundStats = {};
@@ -2212,7 +2222,7 @@ export default function ContrabandGame() {
         const card = drawSafeCard(deck, hand);
         if (card) hand.push(card);
       }
-      return { ...p, hand, loadedCrate: null, ready: false }; // Reset ready status
+      return { ...p, hand, loadedCrate: null, ready: false };
     });
 
     await updateDoc(
@@ -2223,7 +2233,11 @@ export default function ContrabandGame() {
         inspectorIndex: nextInspectorIndex,
         currentRound: nextRound,
         currentRoundStats: nextRoundStats,
-        turnState: "SHOPPING", // Start next round
+        roundHistory: arrayUnion({
+          stats: gameState.currentRoundStats,
+          event: gameState.marketEvent || EVENTS.NORMAL,
+        }), // Ensure history is saved
+        turnState: "SHOPPING",
         marketEvent: nextEvent,
         logs: arrayUnion({
           id: Date.now().toString(),
@@ -2667,8 +2681,22 @@ export default function ContrabandGame() {
           >
             {gameState.players.map((p) => {
               if (p.id === user.uid) return null;
+
               const isInsp = p.id === inspector.id;
-              const RoleIcon = p.role ? ROLES[p.role].icon : User;
+
+              // --- CHANGE 1: Determine Icon (Siren for Inspector, Role for others) ---
+              let StatusIcon = User;
+              let iconColor = "text-zinc-500";
+
+              if (isInsp) {
+                StatusIcon = Siren;
+                iconColor = "text-red-500 animate-pulse"; // Added pulse for visibility
+              } else if (p.role) {
+                StatusIcon = ROLES[p.role].icon;
+                iconColor = ROLES[p.role].color;
+              }
+              // -----------------------------------------------------------------------
+
               return (
                 <div
                   key={p.id}
@@ -2678,9 +2706,11 @@ export default function ContrabandGame() {
                       : "border-zinc-700"
                   } ${p.loadedCrate ? "bg-zinc-800" : ""}`}
                 >
+                  {/* Top Right Icon */}
                   <div className="absolute top-1 right-1 flex items-center gap-1 opacity-70">
-                    <RoleIcon size={12} className={ROLES[p.role]?.color} />
+                    <StatusIcon size={12} className={iconColor} />
                   </div>
+
                   <User
                     size={24}
                     className={isInsp ? "text-yellow-500" : "text-zinc-600"}
@@ -2695,6 +2725,14 @@ export default function ContrabandGame() {
 
                   {p.loadedCrate ? (
                     <div className="mt-2 w-full bg-black/40 rounded p-2 text-center border border-zinc-600">
+                      {/* --- CHANGE 2: Show Loaded Item Count --- */}
+                      <div className="flex justify-center items-center gap-1 mb-1">
+                        <div className="bg-zinc-700 text-zinc-300 text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Box size={8} /> {p.loadedCrate.cards.length}
+                        </div>
+                      </div>
+                      {/* ---------------------------------------- */}
+
                       <div className="text-[10px] text-zinc-500 uppercase flex justify-center items-center gap-1">
                         {GOODS[p.loadedCrate.declaration].name}{" "}
                         {p.loadedCrate.bribe > 0 && (
@@ -2763,23 +2801,42 @@ export default function ContrabandGame() {
             <div className="flex flex-col md:flex-row gap-6">
               {/* My Stats */}
               <div className="flex flex-col gap-2 min-w-[140px]">
-                <div className="font-bold text-lg text-white flex items-center gap-2">
-                  {me.role &&
-                    React.createElement(ROLES[me.role].icon, {
-                      size: 18,
-                      className: ROLES[me.role].color,
-                    })}
-                  {me.name}
-                </div>
-                <div className="text-xs text-zinc-500">
-                  {ROLES[me.role]?.desc}
-                </div>
+                {/* --- CHANGE: Conditional Rendering for Inspector vs Role --- */}
+                {isInspector ? (
+                  // INSPECTOR VIEW
+                  <>
+                    <div className="font-bold text-lg text-white flex items-center gap-2">
+                      <Siren size={18} className="text-red-500 animate-pulse" />
+                      {me.name}
+                    </div>
+                    <div className="text-xs text-red-300 font-bold">
+                      You are the Inspector. Check crates!
+                    </div>
+                  </>
+                ) : (
+                  // REGULAR ROLE VIEW
+                  <>
+                    <div className="font-bold text-lg text-white flex items-center gap-2">
+                      {me.role &&
+                        React.createElement(ROLES[me.role].icon, {
+                          size: 18,
+                          className: ROLES[me.role].color,
+                        })}
+                      {me.name}
+                    </div>
+                    <div className="text-xs text-zinc-500">
+                      {ROLES[me.role]?.desc}
+                    </div>
+                  </>
+                )}
+                {/* -------------------------------------------------------- */}
 
                 {/* Event Info Display */}
                 <div className="mt-2 border-t border-zinc-700 pt-2">
                   <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1 flex items-center gap-1">
                     <Info size={10} /> Event Active
                   </div>
+                  {/* ... existing event code ... */}
                   <div className="text-sm font-bold text-yellow-500">
                     {currentEvent.name}
                   </div>
@@ -2788,6 +2845,7 @@ export default function ContrabandGame() {
                   </div>
                 </div>
 
+                {/* ... existing upgrades/stash buttons ... */}
                 <div className="mt-2 flex gap-1 flex-wrap">
                   {me.upgrades?.map((u) => {
                     const ItemIcon = SHOP_ITEMS[u].icon;
@@ -2810,7 +2868,9 @@ export default function ContrabandGame() {
                   <Briefcase size={12} /> View Stash ({me.stash.length})
                 </button>
 
+                {/* ... existing ready/shop buttons ... */}
                 {gameState.turnState === "SHOPPING" && (
+                  // ... existing shop button code ...
                   <>
                     <button
                       onClick={() => !shopDisabled && setShowShop(true)}
@@ -2840,12 +2900,9 @@ export default function ContrabandGame() {
 
               {/* Hand / Main Action Area */}
               <div className="flex-1 overflow-x-auto min-h-[160px]">
-                {isInspector ? (
-                  <div className="h-full flex items-center justify-center text-zinc-500 border-2 border-dashed border-zinc-800 rounded-xl bg-black/20 gap-2">
-                    <ShieldCheck size={32} />
-                    <span>You are the Inspector. Check crates above.</span>
-                  </div>
-                ) : me.loadedCrate ? (
+                {/* --- CHANGE: Removed the text box for Inspector --- */}
+                {isInspector ? null : me.loadedCrate ? (
+                  // ... existing loadedCrate code ...
                   <div className="h-full flex flex-col items-center justify-center w-full min-w-0">
                     {/* Display Locked Cards - Scrollable & Centered */}
                     <div className="w-full overflow-x-auto no-scrollbar">
