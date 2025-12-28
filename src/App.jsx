@@ -381,7 +381,10 @@ const CardIcon = ({ typeId, size = 12 }) => {
 };
 
 const ReportCard = ({ players, roundData, isFinal }) => {
-  const [activeTab, setActiveTab] = useState(isFinal ? "FINAL" : 0);
+  // Change: If not final, default to the last index of roundData (the most recent round)
+  const [activeTab, setActiveTab] = useState(
+    isFinal ? "FINAL" : Math.max(0, roundData.length - 1)
+  );
 
   // Tabs for final view
   const tabs = isFinal
