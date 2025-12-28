@@ -273,7 +273,7 @@ const generateDeck = (playerCount) => {
     CHIP: 4 * playerCount,
     WEAPON: 4 * playerCount,
     NARCO: 4 * playerCount,
-    TRAP: 2 * playerCount,
+    TRAP: 1 * playerCount, //chaged from 2 to 1
   };
   Object.entries(counts).forEach(([type, count]) => {
     for (let i = 0; i < count; i++) deck.push(type);
