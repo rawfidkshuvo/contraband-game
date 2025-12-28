@@ -2845,38 +2845,31 @@ export default function ContrabandGame() {
                     <ShieldCheck size={32} />
                     <span>You are the Inspector. Check crates above.</span>
                   </div>
-                ) : // ... inside the Bottom Player Area ...
-
-                // REPLACE THIS BLOCK:
-                /* ) : me.loadedCrate ? (
-  <div className="h-full flex flex-col items-center justify-center text-emerald-400 gap-2 border-2 border-emerald-900 rounded-xl bg-emerald-900/10">
-    <CheckCircle size={32} />
-    <div className="font-bold">Crate Locked</div>
-    <div className="text-xs text-emerald-600">
-      Waiting for inspection...
-    </div>
-  </div>
-)
-*/
-
-                // WITH THIS NEW BLOCK:
-                me.loadedCrate ? (
-                  <div className="h-full flex flex-col items-center justify-center w-full">
-                    {/* Display the Locked Cards */}
-                    <div className="flex gap-2 justify-center mb-2 grayscale-[0.3] scale-90 origin-bottom">
-                      {me.loadedCrate.cards.map((cId, i) => (
-                        <div key={i} className="relative group">
-                          <Card typeId={cId} small={false} />
-                          {/* Lock Overlay */}
-                          <div className="absolute inset-0 bg-black/20 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Lock className="text-white/80 drop-shadow-md" />
+                ) : me.loadedCrate ? (
+                  <div className="h-full flex flex-col items-center justify-center w-full min-w-0">
+                    {/* Display Locked Cards - Scrollable & Centered */}
+                    <div className="w-full overflow-x-auto no-scrollbar">
+                      {/* w-max + mx-auto: Centers the cards if they fit, aligns left if they overflow.
+                          p-4: Adds padding so the hover animation (-translate-y) doesn't get clipped.
+                      */}
+                      <div className="flex gap-2 w-max mx-auto px-4 py-4 grayscale-[0.3] scale-90 origin-bottom">
+                        {me.loadedCrate.cards.map((cId, i) => (
+                          <div
+                            key={i}
+                            className="relative group flex-shrink-0 transition-transform hover:-translate-y-2"
+                          >
+                            <Card typeId={cId} small={false} />
+                            {/* Lock Overlay */}
+                            <div className="absolute inset-0 bg-black/20 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Lock className="text-white/80 drop-shadow-md" />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
 
                     {/* Status Badge */}
-                    <div className="flex items-center gap-3 bg-zinc-900/80 px-4 py-2 rounded-full border border-emerald-500/30 text-xs shadow-xl backdrop-blur-md">
+                    <div className="flex items-center gap-3 bg-zinc-900/80 px-4 py-2 rounded-full border border-emerald-500/30 text-xs shadow-xl backdrop-blur-md whitespace-nowrap z-20">
                       <span className="flex items-center gap-1 text-emerald-400 font-bold">
                         <Lock size={12} /> LOCKED
                       </span>
