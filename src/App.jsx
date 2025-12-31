@@ -2730,6 +2730,26 @@ export default function ContrabandGame() {
                     {p.name}
                   </span>
 
+                  {/* --- NEW CODE STARTS HERE --- */}
+                  {p.upgrades && p.upgrades.length > 0 && (
+                    <div className="flex gap-1 justify-center mt-1 flex-wrap">
+                      {p.upgrades.map((uId) => {
+                        const item = SHOP_ITEMS[uId];
+                        if (!item) return null;
+                        return (
+                          <div
+                            key={uId}
+                            className="p-0.5 bg-zinc-800 rounded border border-zinc-600 text-yellow-500"
+                            title={item.name}
+                          >
+                            <item.icon size={10} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {/* --- NEW CODE ENDS HERE --- */}
+
                   {p.loadedCrate ? (
                     <div className="mt-2 w-full bg-black/40 rounded p-2 text-center border border-zinc-600">
                       {/* --- CHANGE 2: Show Loaded Item Count --- */}
