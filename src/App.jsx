@@ -1223,6 +1223,32 @@ const RulesModal = ({ onClose }) => (
           </div>
         </section>
 
+        {/* --- NEW SECTION: BLACK MARKET ITEMS --- */}
+        <section>
+          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <ShoppingBag className="text-yellow-500" /> Black Market Items
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {Object.values(SHOP_ITEMS).map((item) => (
+              <div
+                key={item.id}
+                className="p-3 bg-zinc-800/50 border border-yellow-600/20 rounded-lg flex flex-col gap-1"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-2 font-bold text-yellow-500">
+                    <item.icon size={16} /> {item.name}
+                  </div>
+                  <span className="text-xs font-mono text-zinc-300 bg-black/40 px-2 py-0.5 rounded border border-zinc-700">
+                    ${item.cost}
+                  </span>
+                </div>
+                <div className="text-xs text-zinc-400">{item.desc}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+        {/* --------------------------------------- */}
+
         {/* Events */}
         <section>
           <h3 className="text-xl font-bold text-white mb-4">Global Events</h3>
