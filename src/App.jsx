@@ -170,7 +170,7 @@ const SHOP_ITEMS = {
   CONCEAL: {
     id: "CONCEAL",
     name: "Hidden Compartment",
-    desc: "First illegal item is safe per inspection",
+    desc: "Last illegal item is safe per inspection",
     cost: 4000,
     icon: Lock,
   },
@@ -1217,7 +1217,7 @@ const RulesModal = ({ onClose }) => (
                 <Eye size={16} /> Snitch
               </div>
               <div className="text-xs text-zinc-400">
-                Get $500 whenever someone else is fined.
+                Get $1000 whenever someone else is fined.
               </div>
             </div>
           </div>
