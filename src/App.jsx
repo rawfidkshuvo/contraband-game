@@ -262,6 +262,15 @@ const ContrabandLogo = () => (
   </div>
 );
 
+const ContrabandLogoBig = () => (
+  <div className="flex items-center justify-center gap-1 opacity-40 mt-auto pb-2 pt-2 relative z-10">
+    <Package size={20} className="text-emerald-400" />
+    <span className="text-[20px] font-black tracking-widest text-emerald-400 uppercase">
+      CONTRABAND
+    </span>
+  </div>
+);
+
 // Deck Template - Scaled for Player Count
 const generateDeck = (playerCount) => {
   let deck = [];
@@ -2446,7 +2455,7 @@ export default function ContrabandGame() {
             disabled={loading}
             className="w-full bg-emerald-700 hover:bg-emerald-600 p-4 rounded font-bold mb-4 flex items-center justify-center gap-2 transition-all"
           >
-            <ShieldCheck size={20} /> Create Operation
+            <ShieldCheck size={20} /> Create Syndicate
           </button>
           <div className="flex gap-2 mb-4">
             <input
@@ -2467,7 +2476,7 @@ export default function ContrabandGame() {
             onClick={() => setShowRules(true)}
             className="w-full text-center text-zinc-500 hover:text-white text-sm mt-2 flex items-center justify-center gap-2"
           >
-            <BookOpen size={14} /> Rules
+            <BookOpen size={14} /> Smuggler's Guide
           </button>
         </div>
         <div className="absolute bottom-4 text-slate-600 text-xs text-center">
@@ -2492,6 +2501,7 @@ export default function ContrabandGame() {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-6 relative">
         <FloatingBackground />
+        <ContrabandLogoBig />
 
         {showLeaveConfirm && (
           <LeaveConfirmModal
@@ -2504,7 +2514,7 @@ export default function ContrabandGame() {
         <div className="z-10 w-full max-w-lg bg-zinc-900/90 backdrop-blur p-8 rounded-2xl border border-emerald-900/50 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-serif text-emerald-500">
-              Lobby <span className="text-white font-mono">{roomId}</span>
+              Station: <span className="text-white font-mono">{roomId}</span>
             </h2>
             <button
               onClick={() => setShowLeaveConfirm(true)}
@@ -2554,7 +2564,9 @@ export default function ContrabandGame() {
               disabled={gameState.players.length < 3}
               className="w-full py-4 bg-emerald-700 hover:bg-emerald-600 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {gameState.players.length < 3 ? "Need 3+ Players" : "Start Game"}
+              {gameState.players.length < 3
+                ? "Need 3+ Players"
+                : "Start Smuggling"}
             </button>
           )}
         </div>
