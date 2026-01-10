@@ -1824,7 +1824,7 @@ export default function ContrabandGame() {
           players: updatedPlayers,
           logs: arrayUnion({
             id: Date.now().toString(),
-            text: `Scanner reveals a ${GOODS[randomCard].name} in ${target.name}'s crate!`,
+            text: `Inspector used scanner in ${target.name}'s crate!`,
             type: "neutral",
           }),
           feedbackTrigger: {
