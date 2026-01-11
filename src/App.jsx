@@ -2038,7 +2038,11 @@ export default function ContrabandGame() {
         );
 
         if (targetHasConceal && illegalCards.length > 0) {
-          illegalCards.shift();
+          // 1. Sort illegal cards by Value (Ascending) so the last one is the most expensive
+          illegalCards.sort((a, b) => GOODS[a].val - GOODS[b].val);
+
+          // 2. Remove the last one (Highest Value) - It is now "Safe"
+          const savedCard = illegalCards.pop();
           logs.push({
             id: Date.now().toString(),
             text: `${target.name}'s Hidden Compartment saved an item!`,
