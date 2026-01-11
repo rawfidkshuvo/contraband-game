@@ -80,8 +80,8 @@ const db = getFirestore(app);
 const APP_ID = typeof __app_id !== "undefined" ? __app_id : "contraband-game";
 const GAME_ID = "12";
 // --- Game Constants ---
-const STARTING_COINS = 5000;
-const BANK_LOAN = 5000;
+const STARTING_COINS = 500;
+const BANK_LOAN = 500;
 
 const ROLES = {
   DIPLOMAT: {
@@ -101,7 +101,7 @@ const ROLES = {
   SNITCH: {
     id: "SNITCH",
     name: "Snitch",
-    desc: "Earn $1000 whenever another player is fined.",
+    desc: "Earn $100 whenever another player is fined.",
     icon: Eye,
     color: "text-yellow-400",
   },
@@ -125,16 +125,16 @@ const EVENTS = {
   WAR: {
     id: "WAR",
     name: "War Zone",
-    desc: "Weapons value x2.",
+    desc: "Weapons & Machinery value x2.", // Updated Description
     multiplier: 2,
-    target: "WEAPON",
+    target: ["WEAPON", "PARTS"], // Now an Array
   },
   PANDEMIC: {
     id: "PANDEMIC",
     name: "Pandemic",
-    desc: "Meds value x2.",
+    desc: "Meds & Rations value x2.", // Updated Description
     multiplier: 2,
-    target: "MEDS",
+    target: ["MEDS", "FOOD"], // Now an Array
   },
   CRACKDOWN: {
     id: "CRACKDOWN",
@@ -157,28 +157,28 @@ const SHOP_ITEMS = {
     id: "POCKETS",
     name: "Deep Pockets",
     desc: "Hand Size +1 (Immediate Draw)",
-    cost: 3000,
+    cost: 300,
     icon: Briefcase,
   },
   EXPANDED: {
     id: "EXPANDED",
     name: "Crate Extension",
     desc: "Load up to 5 cards",
-    cost: 5000,
+    cost: 500,
     icon: Box,
   },
   CONCEAL: {
     id: "CONCEAL",
     name: "Hidden Compartment",
     desc: "Last illegal item is safe per inspection",
-    cost: 4000,
+    cost: 400,
     icon: Lock,
   },
   SCANNER: {
     id: "SCANNER",
     name: "X-Ray Scanner",
     desc: "As Inspector, reveal 1 random card per crate",
-    cost: 4000,
+    cost: 400,
     icon: Scan,
   },
 };
@@ -188,8 +188,8 @@ const GOODS = {
   MEDS: {
     id: "MEDS",
     name: "Medkits",
-    val: 1000,
-    penalty: 1000,
+    val: 200,
+    penalty: 200,
     type: "LEGAL",
     icon: Cross,
     color: "text-green-400",
@@ -197,8 +197,8 @@ const GOODS = {
   FOOD: {
     id: "FOOD",
     name: "Rations",
-    val: 1500,
-    penalty: 1000,
+    val: 300,
+    penalty: 200,
     type: "LEGAL",
     icon: Utensils,
     color: "text-green-300",
@@ -206,8 +206,8 @@ const GOODS = {
   PARTS: {
     id: "PARTS",
     name: "Machinery",
-    val: 2000,
-    penalty: 1000,
+    val: 400,
+    penalty: 200,
     type: "LEGAL",
     icon: Hammer,
     color: "text-green-200",
@@ -216,8 +216,8 @@ const GOODS = {
   CHIP: {
     id: "CHIP",
     name: "AI Core",
-    val: 6000,
-    penalty: 4000,
+    val: 700,
+    penalty: 400,
     type: "ILLEGAL",
     icon: Cpu,
     color: "text-red-400",
@@ -225,8 +225,8 @@ const GOODS = {
   WEAPON: {
     id: "WEAPON",
     name: "Plasma Rifle",
-    val: 8000,
-    penalty: 5000,
+    val: 800,
+    penalty: 400,
     type: "ILLEGAL",
     icon: Zap,
     color: "text-red-500",
@@ -234,8 +234,8 @@ const GOODS = {
   NARCO: {
     id: "NARCO",
     name: "Stims",
-    val: 10000,
-    penalty: 6000,
+    val: 900,
+    penalty: 400,
     type: "ILLEGAL",
     icon: Skull,
     color: "text-purple-500",
@@ -249,7 +249,7 @@ const GOODS = {
     type: "TRAP",
     icon: Bomb,
     color: "text-orange-500",
-    desc: "If opened: Inspector pays $2000",
+    desc: "If opened: Inspector pays $200",
   },
 };
 
@@ -342,6 +342,7 @@ const getUpdatedStats = (currentStats, playerId, updates) => {
     isInspector: false,
     marketItems: [],
     roleBonus: 0,
+    eventImpact: 0, // Initialize new field
   };
 
   const newTransactions = updates.transaction
@@ -359,6 +360,8 @@ const getUpdatedStats = (currentStats, playerId, updates) => {
       income: (playerStats.income || 0) + (updates.income || 0),
       expense: (playerStats.expense || 0) + (updates.expense || 0),
       roleBonus: (playerStats.roleBonus || 0) + (updates.roleBonus || 0),
+      // Aggregate the event impact
+      eventImpact: (playerStats.eventImpact || 0) + (updates.eventImpact || 0),
       transactions: newTransactions,
       marketItems: newMarketItems,
     },
@@ -480,6 +483,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           isInspector: pStat.isInspector,
           marketItems: pStat.marketItems || [],
           roleBonus: pStat.roleBonus || 0,
+          eventImpact: pStat.eventImpact || 0, // NEW: Read calculated impact (+/-)
           transactions: pStat.transactions || [],
           income: pStat.income,
           expense: pStat.expense,
@@ -608,16 +612,27 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                       </div>
                     </td>
 
+                    {/* --- UPDATED EVENT IMPACT COLUMN --- */}
                     <td className="px-6 py-4 align-top">
                       {d.activeEvent && (
-                        <div className="text-xs text-zinc-400">
+                        <div className="text-xs text-zinc-400 mb-1">
                           <div className="font-bold text-zinc-300">
                             {d.activeEvent.name}
                           </div>
-                          <div className="text-[10px] italic">
-                            {d.activeEvent.desc}
-                          </div>
                         </div>
+                      )}
+                      {d.eventImpact !== 0 ? (
+                        <span
+                          className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded ${
+                            d.eventImpact > 0
+                              ? "text-emerald-400 bg-emerald-900/20" // Saved money or Earned Bonus
+                              : "text-red-400 bg-red-900/20" // Paid Extra Fine
+                          }`}
+                        >
+                          {d.eventImpact > 0 ? "+" : ""}${d.eventImpact}
+                        </span>
+                      ) : (
+                        <span className="text-zinc-600 text-xs">-</span>
                       )}
                     </td>
 
@@ -1171,7 +1186,7 @@ const RulesModal = ({ onClose }) => (
                 </span>{" "}
                 If opened crate has a{" "}
                 <span className="text-orange-500 font-bold">Booby Trap</span>,
-                Inspector pays $2000 fine!
+                Inspector pays $200 fine!
               </li>
             </ul>
             <ul className="space-y-2">
@@ -1226,7 +1241,7 @@ const RulesModal = ({ onClose }) => (
                 <Eye size={16} /> Snitch
               </div>
               <div className="text-xs text-zinc-400">
-                Get $1000 whenever someone else is fined.
+                Get $100 whenever someone else is fined.
               </div>
             </div>
           </div>
@@ -1265,13 +1280,14 @@ const RulesModal = ({ onClose }) => (
             <div className="flex items-center gap-3 p-2 bg-zinc-800 rounded">
               <Bomb size={16} className="text-red-500" />{" "}
               <span>
-                <strong>War Zone:</strong> Weapons sell for 2x value.
+                <strong>War Zone:</strong> Weapons and Machinery sell for 2x
+                value.
               </span>
             </div>
             <div className="flex items-center gap-3 p-2 bg-zinc-800 rounded">
               <Skull size={16} className="text-purple-500" />{" "}
               <span>
-                <strong>Pandemic:</strong> Meds sell for 2x value.
+                <strong>Pandemic:</strong> Meds and Foods sell for 2x value.
               </span>
             </div>
             <div className="flex items-center gap-3 p-2 bg-zinc-800 rounded">
@@ -1775,7 +1791,52 @@ export default function ContrabandGame() {
 
     let stats = { ...gameState.currentRoundStats };
 
-    // Helper to apply Merchant/Yakuza bonuses immediately
+    // --- HELPER 1: Calculate Sales Event Bonus ---
+    const calculateSaleStats = (items) => {
+      let total = 0;
+      let impact = 0;
+      items.forEach((c) => {
+        let base = GOODS[c].val;
+        let final = base;
+        if (
+          Array.isArray(currentEvent.target)
+            ? currentEvent.target.includes(c)
+            : currentEvent.target === c
+        ) {
+          final = base * currentEvent.multiplier;
+        }
+        total += final;
+        impact += final - base; // Always positive or zero
+      });
+      return { total, impact };
+    };
+
+    // --- HELPER 2: Calculate Fine Event Impact ---
+    const calculateFineStats = (items) => {
+      let baseFine = items.reduce((sum, c) => sum + GOODS[c].penalty, 0);
+      let roleSavings = 0;
+
+      // Apply Role Logic First (Base fine reduction)
+      if (target.role === "DIPLOMAT") {
+        roleSavings = baseFine * 0.5;
+        baseFine *= 0.5;
+      }
+
+      // Apply Event Logic
+      let finalFine = baseFine;
+      if (currentEvent.id === "CRACKDOWN") finalFine *= 2;
+      if (currentEvent.id === "FREE_TRADE") finalFine *= 0.5;
+
+      // Impact = (What I would have paid without event) - (What I actually paid)
+      // Positive = I saved money. Negative = I paid extra.
+      // Crackdown: Base 1000 - Paid 2000 = -1000 Impact
+      // Free Trade: Base 1000 - Paid 500 = +500 Impact
+      const eventImpact = baseFine - finalFine;
+
+      return { finalFine, roleSavings, eventImpact };
+    };
+
+    // --- HELPER 3: Apply Merchant/Yakuza bonuses ---
     const applyGoodsBonus = (pIdx, items) => {
       const p = players[pIdx];
       let bonus = 0;
@@ -1794,6 +1855,7 @@ export default function ContrabandGame() {
 
       if (bonus > 0) {
         players[pIdx].coins += bonus;
+        players[pIdx].coins = Math.floor(players[pIdx].coins);
         stats = getUpdatedStats(stats, p.id, {
           income: bonus,
           roleBonus: bonus,
@@ -1806,7 +1868,7 @@ export default function ContrabandGame() {
       }
     };
 
-    // Peek Logic
+    // Peek Logic (Unchanged)
     if (action === "PEEK") {
       if (target.loadedCrate.scanned) return;
       const randomCard =
@@ -1851,7 +1913,6 @@ export default function ContrabandGame() {
           type: "bribe",
         });
 
-        // RICH LOGS
         stats = getUpdatedStats(stats, inspector.id, {
           income: bribe,
           transaction: {
@@ -1869,7 +1930,7 @@ export default function ContrabandGame() {
           },
         });
       } else {
-        players[targetIdx].coins += bribe; // Return bribe
+        players[targetIdx].coins += bribe;
         logs.push({
           id: Date.now().toString(),
           text: `Inspector passed ${target.name}.`,
@@ -1889,31 +1950,28 @@ export default function ContrabandGame() {
           });
       }
 
-      const saleValue = target.loadedCrate.cards.reduce((sum, c) => {
-        let v = GOODS[c].val;
-        if (currentEvent.target === c) v *= currentEvent.multiplier;
-        return sum + v;
-      }, 0);
+      // SALES CALCULATION
+      const { total: saleValue, impact } = calculateSaleStats(
+        target.loadedCrate.cards
+      );
       players[targetIdx].coins += saleValue;
 
-      // RICH LOGS SALE
       stats = getUpdatedStats(stats, target.id, {
         income: saleValue,
+        eventImpact: impact, // Pass positive sales impact
         transaction: {
           label: "Goods Sold",
           amount: saleValue,
           items: target.loadedCrate.cards,
-          detail: currentEvent.target
-            ? `Event Mult: x${currentEvent.multiplier}`
-            : "",
+          detail: impact > 0 ? `Event Bonus: +$${impact}` : "",
         },
       });
 
       players[targetIdx].stash.push(...target.loadedCrate.cards);
-      applyGoodsBonus(targetIdx, target.loadedCrate.cards); // Apply Bonus
+      applyGoodsBonus(targetIdx, target.loadedCrate.cards);
     } else if (action === "OPEN") {
       const bribe = target.loadedCrate.bribe || 0;
-      players[targetIdx].coins += bribe; // Return bribe
+      players[targetIdx].coins += bribe;
       if (bribe > 0)
         stats = getUpdatedStats(stats, target.id, {
           income: bribe,
@@ -1925,49 +1983,47 @@ export default function ContrabandGame() {
 
       const hasTrap = cards.includes("TRAP");
       if (hasTrap) {
-        players[inspectorIdx].coins -= 2000;
-        players[targetIdx].coins += 2000;
+        players[inspectorIdx].coins -= 200;
+        players[targetIdx].coins += 200;
 
-        // RICH LOGS TRAP
         stats = getUpdatedStats(stats, inspector.id, {
-          expense: 2000,
+          expense: 200,
           transaction: {
             label: "Trap Exploded",
-            amount: -2000,
+            amount: -200,
             detail: "Booby Trap triggered",
           },
         });
         stats = getUpdatedStats(stats, target.id, {
-          income: 2000,
+          income: 200,
           transaction: {
             label: "Trap Reward",
-            amount: 2000,
+            amount: 200,
             detail: "Inspector triggered trap",
           },
         });
 
         const remainingCards = cards.filter((c) => c !== "TRAP");
-        const saleValue = remainingCards.reduce((sum, c) => {
-          let v = GOODS[c].val;
-          if (currentEvent.target === c) v *= currentEvent.multiplier;
-          return sum + v;
-        }, 0);
+        // SALES CALCULATION (Survivors)
+        const { total: saleValue, impact } = calculateSaleStats(remainingCards);
         players[targetIdx].coins += saleValue;
 
         stats = getUpdatedStats(stats, target.id, {
           income: saleValue,
+          eventImpact: impact,
           transaction: {
             label: "Survivors Sold",
             amount: saleValue,
             items: remainingCards,
+            detail: impact > 0 ? `Event Bonus: +$${impact}` : "",
           },
         });
         players[targetIdx].stash.push(...remainingCards);
-        applyGoodsBonus(targetIdx, remainingCards); // Apply Bonus
+        applyGoodsBonus(targetIdx, remainingCards);
 
         logs.push({
           id: Date.now().toString(),
-          text: `BOOM! Booby Trap! Inspector pays $2000.`,
+          text: `BOOM! Booby Trap! Inspector pays $200.`,
           type: "danger",
         });
         fb = {
@@ -1991,15 +2047,12 @@ export default function ContrabandGame() {
         }
 
         if (illegalCards.length === 0) {
-          // CLEAN
-          let penalty = cards.reduce((sum, c) => sum + GOODS[c].penalty, 0);
-          if (currentEvent.id === "CRACKDOWN") penalty *= 2;
-          if (currentEvent.id === "FREE_TRADE") penalty *= 0.5;
+          // CLEAN - Calculate Fine & Impact
+          const { finalFine: penalty, eventImpact } = calculateFineStats(cards);
 
           players[inspectorIdx].coins -= penalty;
           players[targetIdx].coins += penalty;
 
-          // RICH LOGS CLEAN
           stats = getUpdatedStats(stats, inspector.id, {
             expense: penalty,
             transaction: {
@@ -2010,6 +2063,7 @@ export default function ContrabandGame() {
           });
           stats = getUpdatedStats(stats, target.id, {
             income: penalty,
+            eventImpact: eventImpact, // Pass impact (Positive if Crackdown, Negative if Free Trade for Clean reward context)
             transaction: {
               label: "Clean Bonus",
               amount: penalty,
@@ -2017,23 +2071,23 @@ export default function ContrabandGame() {
             },
           });
 
-          const saleValue = cards.reduce((sum, c) => {
-            let v = GOODS[c].val;
-            if (currentEvent.target === c) v *= currentEvent.multiplier;
-            return sum + v;
-          }, 0);
+          const { total: saleValue, impact: saleImpact } =
+            calculateSaleStats(cards);
           players[targetIdx].coins += saleValue;
+
           stats = getUpdatedStats(stats, target.id, {
             income: saleValue,
+            eventImpact: saleImpact, // Accumulate Sales impact
             transaction: {
               label: "Goods Sold",
               amount: saleValue,
               items: cards,
+              detail: saleImpact > 0 ? `Event Bonus: +$${saleImpact}` : "",
             },
           });
 
           players[targetIdx].stash.push(...cards);
-          applyGoodsBonus(targetIdx, cards); // Apply Bonus
+          applyGoodsBonus(targetIdx, cards);
 
           logs.push({
             id: Date.now().toString(),
@@ -2048,24 +2102,11 @@ export default function ContrabandGame() {
           };
         } else {
           // BUSTED
-          let fine = 0;
           let seized = [];
           let kept = [];
-          let roleBonus = 0;
 
           cards.forEach((c) => {
             if (illegalCards.includes(c)) {
-              let itemFine = GOODS[c].penalty;
-              let baseFine = itemFine;
-
-              if (target.role === "DIPLOMAT") itemFine *= 0.5;
-              if (currentEvent.id === "CRACKDOWN") itemFine *= 2;
-              if (currentEvent.id === "FREE_TRADE") itemFine *= 0.5;
-
-              // Track Diplomat Savings
-              if (target.role === "DIPLOMAT") roleBonus += baseFine * 0.5;
-
-              fine += itemFine;
               seized.push(c);
               const idx = illegalCards.indexOf(c);
               if (idx > -1) illegalCards.splice(idx, 1);
@@ -2074,58 +2115,62 @@ export default function ContrabandGame() {
             }
           });
 
-          players[targetIdx].coins -= fine;
-          players[inspectorIdx].coins += fine;
+          // Calculate Fine on Seized items
+          const { finalFine, roleSavings, eventImpact } =
+            calculateFineStats(seized);
 
-          // RICH LOGS BUSTED
+          players[targetIdx].coins -= finalFine;
+          players[inspectorIdx].coins += finalFine;
+
           stats = getUpdatedStats(stats, target.id, {
-            expense: fine,
-            roleBonus: roleBonus,
+            expense: finalFine,
+            roleBonus: roleSavings, // Track Diplomat Savings
+            eventImpact: eventImpact, // Track Crackdown/Free Trade impact
             transaction: {
               label: "Fine Paid",
-              amount: -fine,
+              amount: -finalFine,
               detail: `Seized: ${seized.length} items`,
             },
           });
           stats = getUpdatedStats(stats, inspector.id, {
-            income: fine,
+            income: finalFine,
             transaction: {
               label: "Fine Collected",
-              amount: fine,
+              amount: finalFine,
               items: seized,
             },
           });
 
-          const saleValue = kept.reduce((sum, c) => {
-            let v = GOODS[c].val;
-            if (currentEvent.target === c) v *= currentEvent.multiplier;
-            return sum + v;
-          }, 0);
+          // Sell Kept Goods
+          const { total: saleValue, impact: saleImpact } =
+            calculateSaleStats(kept);
           players[targetIdx].coins += saleValue;
+
           if (saleValue > 0)
             stats = getUpdatedStats(stats, target.id, {
               income: saleValue,
+              eventImpact: saleImpact, // Accumulate sales impact
               transaction: {
                 label: "Kept Goods Sold",
                 amount: saleValue,
                 items: kept,
+                detail: saleImpact > 0 ? `Event Bonus: +$${saleImpact}` : "",
               },
             });
 
           players[targetIdx].stash.push(...kept);
-          applyGoodsBonus(targetIdx, kept); // Apply Bonus
+          applyGoodsBonus(targetIdx, kept);
 
-          // Snitch Bonus
           snitchBonus.forEach((s) => {
             const sIdx = players.findIndex((pl) => pl.id === s.id);
             if (sIdx > -1) {
-              players[sIdx].coins += 1000;
+              players[sIdx].coins += 100;
               stats = getUpdatedStats(stats, s.id, {
-                income: 1000,
-                roleBonus: 1000,
+                income: 100,
+                roleBonus: 100,
                 transaction: {
                   label: "Snitch Reward",
-                  amount: 1000,
+                  amount: 100,
                   detail: `${target.name} busted`,
                 },
               });
@@ -2134,7 +2179,7 @@ export default function ContrabandGame() {
 
           logs.push({
             id: Date.now().toString(),
-            text: `BUSTED! ${target.name} pays $${fine}. ${seized.length} items seized.`,
+            text: `BUSTED! ${target.name} pays $${finalFine}. ${seized.length} items seized.`,
             type: "success",
           });
           fb = {
@@ -2152,29 +2197,23 @@ export default function ContrabandGame() {
       (p) => p.id !== inspector.id && p.loadedCrate !== null
     );
 
-    // ... inside inspectCrate, replacing the pending.length check ...
-
     if (pending.length === 0) {
-      // 1. Create the history entry for this round
       const historyEntry = {
         stats: stats,
         event: currentEvent || EVENTS.NORMAL,
       };
-
-      // 2. Update DB: Commit history and switch to ROUND_SUMMARY
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
           players,
           logs: arrayUnion(...logs),
           currentRoundStats: stats,
-          roundHistory: arrayUnion(historyEntry), // Save history immediately
-          turnState: "ROUND_SUMMARY", // <--- NEW STATE
+          roundHistory: arrayUnion(historyEntry),
+          turnState: "ROUND_SUMMARY",
           feedbackTrigger: fb,
         }
       );
     } else {
-      // Standard update if round isn't over
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
@@ -3077,7 +3116,7 @@ export default function ContrabandGame() {
                           type="range"
                           min="0"
                           max={Math.max(0, Math.min(me.coins, 10000))}
-                          step="100"
+                          step="10"
                           value={bribeAmount}
                           onChange={(e) => setBribeAmount(e.target.value)}
                           className="flex-1 accent-yellow-500 h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer"
@@ -3121,7 +3160,7 @@ export default function ContrabandGame() {
                             10000,
                             me.coins + (me.loadedCrate?.bribe || 0)
                           )}
-                          step="100"
+                          step="10"
                           value={bribeAmount}
                           onChange={(e) => setBribeAmount(e.target.value)}
                           className="flex-1 accent-yellow-500 h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
@@ -3296,3 +3335,4 @@ export default function ContrabandGame() {
 
   return null;
 }
+//major update. card values changed. updated events. updated report with event bonus.
