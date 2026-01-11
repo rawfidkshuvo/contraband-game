@@ -170,7 +170,7 @@ const SHOP_ITEMS = {
   CONCEAL: {
     id: "CONCEAL",
     name: "Hidden Compartment",
-    desc: "Last illegal item is safe per inspection",
+    desc: "One highest value illegal item is safe per inspection",
     cost: 400,
     icon: Lock,
   },
