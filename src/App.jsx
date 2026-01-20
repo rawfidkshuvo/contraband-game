@@ -393,12 +393,10 @@ const CardIcon = ({ typeId, size = 12 }) => {
 };
 
 const ReportCard = ({ players, roundData, isFinal }) => {
-  // Change: If not final, default to the last index of roundData (the most recent round)
   const [activeTab, setActiveTab] = useState(
     isFinal ? "FINAL" : Math.max(0, roundData.length - 1)
   );
 
-  // Tabs for final view
   const tabs = isFinal
     ? ["FINAL", ...roundData.map((_, i) => `ROUND ${i + 1}`)]
     : [];
@@ -411,20 +409,36 @@ const ReportCard = ({ players, roundData, isFinal }) => {
         let stashBonus = 0;
         let totalRoleBonus = 0;
         let bonusBreakdown = [];
+        
+        // --- NEW: Event Impact Tracking ---
+        let totalEventImpact = 0;
+        let eventBreakdown = [];
+
         const stash = p.stash || [];
 
-        // 2. Aggregate per-round bonuses (Snitch, Diplomat, etc) from history
-        let roundBonusTotal = 0;
+        // Aggregate per-round stats
         roundData.forEach((r, i) => {
           const rStats = r.stats[p.id];
-          if (rStats && rStats.roleBonus > 0) {
-            roundBonusTotal += rStats.roleBonus;
-            bonusBreakdown.push(
-              `R${i + 1} (${ROLES[rStats.role]?.name}): +$${rStats.roleBonus}`
-            );
+          if (rStats) {
+            // Role Bonus Logic
+            if (rStats.roleBonus > 0) {
+              totalRoleBonus += rStats.roleBonus;
+              bonusBreakdown.push(
+                `R${i + 1} (${ROLES[rStats.role]?.name}): +$${rStats.roleBonus}`
+              );
+            }
+
+            // --- NEW: Event Impact Logic ---
+            if (rStats.eventImpact && rStats.eventImpact !== 0) {
+              totalEventImpact += rStats.eventImpact;
+              eventBreakdown.push(
+                `R${i + 1} (${r.event?.name || "Event"}): ${
+                  rStats.eventImpact > 0 ? "+" : ""
+                }$${rStats.eventImpact}`
+              );
+            }
           }
         });
-        totalRoleBonus += roundBonusTotal;
 
         const total = Math.floor(p.coins + stashBonus - BANK_LOAN);
         const stashTotal = stash.reduce(
@@ -440,20 +454,24 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           stashVal: stashTotal,
           bonus: Math.floor(totalRoleBonus),
           bonusDetails: bonusBreakdown,
+          // --- NEW: Add Event Data to Object ---
+          eventBonus: totalEventImpact,
+          eventDetails: eventBreakdown,
           loan: -BANK_LOAN,
           total,
           isWinner: false,
         };
       });
+      
       displayData.sort((a, b) => b.total - a.total);
       if (displayData.length > 0) displayData[0].isWinner = true;
     } else {
-      // Round View - Detailed
+      // ... (Existing Round View Logic remains unchanged) ...
       const roundIdx =
         typeof activeTab === "string"
           ? parseInt(activeTab.split(" ")[1]) - 1
           : activeTab;
-      // Handle the new structure { stats, event }
+      
       const roundEntry = Array.isArray(roundData)
         ? roundData[
             activeTab === "FINAL"
@@ -483,7 +501,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           isInspector: pStat.isInspector,
           marketItems: pStat.marketItems || [],
           roleBonus: pStat.roleBonus || 0,
-          eventImpact: pStat.eventImpact || 0, // NEW: Read calculated impact (+/-)
+          eventImpact: pStat.eventImpact || 0,
           transactions: pStat.transactions || [],
           income: pStat.income,
           expense: pStat.expense,
@@ -508,7 +526,11 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                     Stash
                   </th>
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-yellow-400">
-                    All Role Bonuses
+                    Role Bonuses
+                  </th>
+                  {/* --- NEW COLUMN HEADER --- */}
+                  <th className="px-6 py-3 border-b border-zinc-800 text-right text-blue-400">
+                    Event Impact
                   </th>
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-red-400">
                     Loan
@@ -587,6 +609,30 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         ))}
                       </div>
                     </td>
+
+                    {/* --- NEW COLUMN CELL: Event Impact --- */}
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex flex-col items-end">
+                        <span
+                          className={`font-mono ${
+                            d.eventBonus > 0
+                              ? "text-blue-400"
+                              : d.eventBonus < 0
+                              ? "text-red-400"
+                              : "text-zinc-600"
+                          }`}
+                        >
+                          {d.eventBonus > 0 ? "+" : ""}
+                          {d.eventBonus}
+                        </span>
+                        {d.eventDetails.map((det, idx) => (
+                          <span key={idx} className="text-[9px] text-zinc-500">
+                            {det}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+
                     <td className="px-6 py-4 text-right font-mono text-red-400">
                       {d.loan}
                     </td>
@@ -596,7 +642,8 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   </tr>
                 );
               } else {
-                return (
+                 // ... (Existing Round View Row logic remains exactly the same, omitted for brevity but part of the component)
+                 return (
                   <tr key={d.id} className="group hover:bg-zinc-800/30">
                     <td className="px-6 py-4 align-top">
                       <div className="font-medium text-white mb-1">
@@ -612,7 +659,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                       </div>
                     </td>
 
-                    {/* --- UPDATED EVENT IMPACT COLUMN --- */}
                     <td className="px-6 py-4 align-top">
                       {d.activeEvent && (
                         <div className="text-xs text-zinc-400 mb-1">
@@ -625,8 +671,8 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         <span
                           className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded ${
                             d.eventImpact > 0
-                              ? "text-emerald-400 bg-emerald-900/20" // Saved money or Earned Bonus
-                              : "text-red-400 bg-red-900/20" // Paid Extra Fine
+                              ? "text-emerald-400 bg-emerald-900/20"
+                              : "text-red-400 bg-red-900/20"
                           }`}
                         >
                           {d.eventImpact > 0 ? "+" : ""}${d.eventImpact}
