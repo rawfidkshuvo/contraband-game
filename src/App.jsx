@@ -407,14 +407,19 @@ const ReportCard = ({ players, roundData, isFinal }) => {
     if (isFinalView) {
       displayData = players.map((p) => {
         let stashBonus = 0;
+        
+        // Accumulators
         let totalRoleBonus = 0;
         let bonusBreakdown = [];
+        
         let totalEventImpact = 0;
         let eventBreakdown = [];
         
-        // --- NEW: Inspection Impact Variables ---
         let totalInspectionNet = 0; 
         let inspectionBreakdown = [];
+
+        let totalMarketSpend = 0;
+        let marketBreakdown = [];
 
         const stash = p.stash || [];
 
@@ -422,7 +427,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
         roundData.forEach((r, i) => {
           const rStats = r.stats[p.id];
           if (rStats) {
-            // 1. Role Bonus Logic
+            // 1. Role Bonus
             if (rStats.roleBonus > 0) {
               totalRoleBonus += rStats.roleBonus;
               bonusBreakdown.push(
@@ -430,18 +435,28 @@ const ReportCard = ({ players, roundData, isFinal }) => {
               );
             }
 
-            // 2. Event Impact Logic
+            // 2. Event Impact
             if (rStats.eventImpact && rStats.eventImpact !== 0) {
               totalEventImpact += rStats.eventImpact;
               eventBreakdown.push(
-                `R${i + 1} (${r.event?.name || "Event"}): ${
+                `R${i + 1} (${r.event?.name}): ${
                   rStats.eventImpact > 0 ? "+" : ""
                 }$${rStats.eventImpact}`
               );
             }
 
-            // 3. --- NEW: Inspection Impact Logic ---
-            // We scan transactions for specific labels related to fines/traps/bribes
+            // 3. Black Market Purchases
+            if (rStats.marketItems && rStats.marketItems.length > 0) {
+              rStats.marketItems.forEach(itemId => {
+                const item = SHOP_ITEMS[itemId];
+                if (item) {
+                  totalMarketSpend += item.cost;
+                  marketBreakdown.push(`R${i+1}: ${item.name} (-$${item.cost})`);
+                }
+              });
+            }
+
+            // 4. Inspection Impact (Scanning transactions)
             const inspectionLabels = [
               "Fine Paid", "Fine Collected",
               "Bribe Paid", "Bribe Accepted", "Bribe Returned",
@@ -453,9 +468,15 @@ const ReportCard = ({ players, roundData, isFinal }) => {
               rStats.transactions.forEach(t => {
                 if (inspectionLabels.includes(t.label)) {
                   totalInspectionNet += t.amount;
-                  // Only add to breakdown if it's significant to avoid clutter
                   if (Math.abs(t.amount) > 0) {
-                     inspectionBreakdown.push(`R${i+1}: ${t.label} (${t.amount > 0 ? "+" : ""}${t.amount})`);
+                     // Shorten labels for UI fit
+                     let label = t.label;
+                     if(label === "Fine Paid") label = "Fined";
+                     if(label === "Fine Collected") label = "Fine Coll.";
+                     if(label === "Trap Exploded") label = "Trap Hit";
+                     if(label === "Wrongful Search") label = "Clean";
+                     
+                     inspectionBreakdown.push(`R${i+1}: ${label} (${t.amount > 0 ? "+" : ""}${t.amount})`);
                   }
                 }
               });
@@ -475,14 +496,19 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           role: p.role,
           cash: p.coins,
           stashVal: stashTotal,
+          
           bonus: Math.floor(totalRoleBonus),
           bonusDetails: bonusBreakdown,
+          
           eventBonus: totalEventImpact,
           eventDetails: eventBreakdown,
-          // --- NEW ---
+          
           inspectionNet: totalInspectionNet,
           inspectionDetails: inspectionBreakdown,
-          // -----------
+
+          marketCost: totalMarketSpend,
+          marketDetails: marketBreakdown,
+          
           loan: -BANK_LOAN,
           total,
           isWinner: false,
@@ -492,7 +518,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
       displayData.sort((a, b) => b.total - a.total);
       if (displayData.length > 0) displayData[0].isWinner = true;
     } else {
-      // ... (Round View Logic - Unchanged) ...
+      // ... (Existing Round View Logic - Unchanged) ...
       const roundIdx =
         typeof activeTab === "string"
           ? parseInt(activeTab.split(" ")[1]) - 1
@@ -551,9 +577,12 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-emerald-300">
                     Stash
                   </th>
-                  {/* --- NEW COLUMN HEADER --- */}
+                  {/* --- NEW COLUMNS --- */}
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-purple-400">
                     Insp. Impact
+                  </th>
+                  <th className="px-6 py-3 border-b border-zinc-800 text-right text-orange-400">
+                    Black Market
                   </th>
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-yellow-400">
                     Role Bonus
@@ -561,6 +590,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-blue-400">
                     Event Impact
                   </th>
+                  {/* ------------------- */}
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-red-400">
                     Loan
                   </th>
@@ -597,7 +627,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                       d.isWinner ? "bg-emerald-900/10" : ""
                     }`}
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 align-top">
                       <div className="flex items-center gap-3">
                         <div
                           className={`flex items-center justify-center w-6 h-6 rounded-full font-bold text-[10px] ${
@@ -620,15 +650,15 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right font-mono text-zinc-400">
+                    <td className="px-6 py-4 text-right font-mono text-zinc-400 align-top">
                       ${d.cash}
                     </td>
-                    <td className="px-6 py-4 text-right font-mono text-emerald-300">
+                    <td className="px-6 py-4 text-right font-mono text-emerald-300 align-top">
                       ${d.stashVal}
                     </td>
 
-                    {/* --- NEW CELL: Inspection Impact --- */}
-                    <td className="px-6 py-4 text-right">
+                    {/* Inspection Impact - With Details */}
+                    <td className="px-6 py-4 text-right align-top">
                        <div className="flex flex-col items-end">
                         <span
                           className={`font-mono ${
@@ -642,22 +672,36 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                           {d.inspectionNet > 0 ? "+" : ""}
                           {d.inspectionNet}
                         </span>
-                        {d.inspectionDetails.length > 0 && (
-                            <span className="text-[9px] text-zinc-500">
-                                {d.inspectionDetails.length} interactions
-                            </span>
-                        )}
+                        {d.inspectionDetails.map((det, idx) => (
+                           <span key={idx} className="text-[9px] text-zinc-500 whitespace-nowrap">
+                                {det}
+                           </span>
+                        ))}
                       </div>
+                    </td>
+
+                    {/* Black Market - With Details */}
+                    <td className="px-6 py-4 text-right align-top">
+                        <div className="flex flex-col items-end">
+                            <span className={`font-mono ${d.marketCost > 0 ? "text-orange-400" : "text-zinc-600"}`}>
+                                -${d.marketCost}
+                            </span>
+                            {d.marketDetails.map((det, idx) => (
+                                <span key={idx} className="text-[9px] text-zinc-500 whitespace-nowrap">
+                                    {det}
+                                </span>
+                            ))}
+                        </div>
                     </td>
                     
                     {/* Role Bonuses */}
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right align-top">
                       <div className="flex flex-col items-end">
                         <span className="font-mono text-yellow-400">
                           +{d.bonus}
                         </span>
                         {d.bonusDetails.map((det, idx) => (
-                          <span key={idx} className="text-[9px] text-zinc-500">
+                          <span key={idx} className="text-[9px] text-zinc-500 whitespace-nowrap">
                             {det}
                           </span>
                         ))}
@@ -665,7 +709,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                     </td>
 
                     {/* Event Impact */}
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right align-top">
                       <div className="flex flex-col items-end">
                         <span
                           className={`font-mono ${
@@ -680,23 +724,23 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                           {d.eventBonus}
                         </span>
                         {d.eventDetails.map((det, idx) => (
-                          <span key={idx} className="text-[9px] text-zinc-500">
+                          <span key={idx} className="text-[9px] text-zinc-500 whitespace-nowrap">
                             {det}
                           </span>
                         ))}
                       </div>
                     </td>
 
-                    <td className="px-6 py-4 text-right font-mono text-red-400">
+                    <td className="px-6 py-4 text-right font-mono text-red-400 align-top">
                       {d.loan}
                     </td>
-                    <td className="px-6 py-4 text-right font-mono font-bold text-white text-lg">
+                    <td className="px-6 py-4 text-right font-mono font-bold text-white text-lg align-top">
                       ${d.total}
                     </td>
                   </tr>
                 );
               } else {
-                 // ... (Existing Round View Row - Unchanged) ...
+                 // ... (Round View Row - Unchanged) ...
                  return (
                   <tr key={d.id} className="group hover:bg-zinc-800/30">
                     <td className="px-6 py-4 align-top">
