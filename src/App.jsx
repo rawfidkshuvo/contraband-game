@@ -409,10 +409,12 @@ const ReportCard = ({ players, roundData, isFinal }) => {
         let stashBonus = 0;
         let totalRoleBonus = 0;
         let bonusBreakdown = [];
-        
-        // --- NEW: Event Impact Tracking ---
         let totalEventImpact = 0;
         let eventBreakdown = [];
+        
+        // --- NEW: Inspection Impact Variables ---
+        let totalInspectionNet = 0; 
+        let inspectionBreakdown = [];
 
         const stash = p.stash || [];
 
@@ -420,7 +422,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
         roundData.forEach((r, i) => {
           const rStats = r.stats[p.id];
           if (rStats) {
-            // Role Bonus Logic
+            // 1. Role Bonus Logic
             if (rStats.roleBonus > 0) {
               totalRoleBonus += rStats.roleBonus;
               bonusBreakdown.push(
@@ -428,7 +430,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
               );
             }
 
-            // --- NEW: Event Impact Logic ---
+            // 2. Event Impact Logic
             if (rStats.eventImpact && rStats.eventImpact !== 0) {
               totalEventImpact += rStats.eventImpact;
               eventBreakdown.push(
@@ -436,6 +438,27 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   rStats.eventImpact > 0 ? "+" : ""
                 }$${rStats.eventImpact}`
               );
+            }
+
+            // 3. --- NEW: Inspection Impact Logic ---
+            // We scan transactions for specific labels related to fines/traps/bribes
+            const inspectionLabels = [
+              "Fine Paid", "Fine Collected",
+              "Bribe Paid", "Bribe Accepted", "Bribe Returned",
+              "Trap Exploded", "Trap Reward",
+              "Wrongful Search", "Clean Bonus"
+            ];
+
+            if (rStats.transactions) {
+              rStats.transactions.forEach(t => {
+                if (inspectionLabels.includes(t.label)) {
+                  totalInspectionNet += t.amount;
+                  // Only add to breakdown if it's significant to avoid clutter
+                  if (Math.abs(t.amount) > 0) {
+                     inspectionBreakdown.push(`R${i+1}: ${t.label} (${t.amount > 0 ? "+" : ""}${t.amount})`);
+                  }
+                }
+              });
             }
           }
         });
@@ -454,9 +477,12 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           stashVal: stashTotal,
           bonus: Math.floor(totalRoleBonus),
           bonusDetails: bonusBreakdown,
-          // --- NEW: Add Event Data to Object ---
           eventBonus: totalEventImpact,
           eventDetails: eventBreakdown,
+          // --- NEW ---
+          inspectionNet: totalInspectionNet,
+          inspectionDetails: inspectionBreakdown,
+          // -----------
           loan: -BANK_LOAN,
           total,
           isWinner: false,
@@ -466,7 +492,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
       displayData.sort((a, b) => b.total - a.total);
       if (displayData.length > 0) displayData[0].isWinner = true;
     } else {
-      // ... (Existing Round View Logic remains unchanged) ...
+      // ... (Round View Logic - Unchanged) ...
       const roundIdx =
         typeof activeTab === "string"
           ? parseInt(activeTab.split(" ")[1]) - 1
@@ -525,10 +551,13 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-emerald-300">
                     Stash
                   </th>
-                  <th className="px-6 py-3 border-b border-zinc-800 text-right text-yellow-400">
-                    Role Bonuses
-                  </th>
                   {/* --- NEW COLUMN HEADER --- */}
+                  <th className="px-6 py-3 border-b border-zinc-800 text-right text-purple-400">
+                    Insp. Impact
+                  </th>
+                  <th className="px-6 py-3 border-b border-zinc-800 text-right text-yellow-400">
+                    Role Bonus
+                  </th>
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-blue-400">
                     Event Impact
                   </th>
@@ -597,6 +626,31 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                     <td className="px-6 py-4 text-right font-mono text-emerald-300">
                       ${d.stashVal}
                     </td>
+
+                    {/* --- NEW CELL: Inspection Impact --- */}
+                    <td className="px-6 py-4 text-right">
+                       <div className="flex flex-col items-end">
+                        <span
+                          className={`font-mono ${
+                            d.inspectionNet > 0
+                              ? "text-purple-400"
+                              : d.inspectionNet < 0
+                              ? "text-red-400"
+                              : "text-zinc-600"
+                          }`}
+                        >
+                          {d.inspectionNet > 0 ? "+" : ""}
+                          {d.inspectionNet}
+                        </span>
+                        {d.inspectionDetails.length > 0 && (
+                            <span className="text-[9px] text-zinc-500">
+                                {d.inspectionDetails.length} interactions
+                            </span>
+                        )}
+                      </div>
+                    </td>
+                    
+                    {/* Role Bonuses */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-mono text-yellow-400">
@@ -610,7 +664,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                       </div>
                     </td>
 
-                    {/* --- NEW COLUMN CELL: Event Impact --- */}
+                    {/* Event Impact */}
                     <td className="px-6 py-4 text-right">
                       <div className="flex flex-col items-end">
                         <span
@@ -642,7 +696,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   </tr>
                 );
               } else {
-                 // ... (Existing Round View Row logic remains exactly the same, omitted for brevity but part of the component)
+                 // ... (Existing Round View Row - Unchanged) ...
                  return (
                   <tr key={d.id} className="group hover:bg-zinc-800/30">
                     <td className="px-6 py-4 align-top">
