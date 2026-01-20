@@ -1358,6 +1358,8 @@ export default function ContrabandGame() {
     }
   }, []);
 
+  // --- Inside ContrabandGame component ---
+
   useEffect(() => {
     if (!roomId || !user) return;
     const unsub = onSnapshot(
@@ -1366,7 +1368,6 @@ export default function ContrabandGame() {
         if (snap.exists()) {
           const data = snap.data();
           if (!data.players?.some((p) => p.id === user.uid)) {
-            // Player was likely kicked or game ended
             setRoomId("");
             setView("menu");
             localStorage.removeItem("contraband_roomId");
@@ -1377,13 +1378,22 @@ export default function ContrabandGame() {
           if (data.status === "lobby") setView("lobby");
           else setView("game");
 
+          // --- UPDATED LOGIC HERE ---
           if (
             data.feedbackTrigger &&
             data.feedbackTrigger.id !== gameState?.feedbackTrigger?.id
           ) {
-            setFeedback(data.feedbackTrigger);
-            setTimeout(() => setFeedback(null), 3000);
+            // Check if this feedback is restricted to a specific user
+            const isVisible =
+              !data.feedbackTrigger.visibleTo || 
+              data.feedbackTrigger.visibleTo === user.uid;
+
+            if (isVisible) {
+              setFeedback(data.feedbackTrigger);
+              setTimeout(() => setFeedback(null), 3000);
+            }
           }
+          // --------------------------
         } else {
           setRoomId("");
           setView("menu");
@@ -1393,7 +1403,7 @@ export default function ContrabandGame() {
       }
     );
     return () => unsub();
-  }, [roomId, user, gameState?.feedbackTrigger?.id]);
+  }, [roomId, user, gameState?.feedbackTrigger?.id]); // Ensure dependencies are correct
 
   // --- Helpers ---
   const me = gameState?.players.find((p) => p.id === user?.uid) || {};
@@ -1894,6 +1904,7 @@ export default function ContrabandGame() {
             type: "neutral",
             message: "SCAN RESULT",
             subtext: `Found: ${GOODS[randomCard].name}`,
+            visibleTo: inspector.id,
           },
         }
       );
