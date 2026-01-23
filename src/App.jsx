@@ -1457,9 +1457,7 @@ const RulesModal = ({ onClose }) => (
 export default function ContrabandGame() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState("menu");
-  const [playerName, setPlayerName] = useState(
-    () => localStorage.getItem("contraband_playerName") || ""
-  );
+  
   const [roomId, setRoomId] = useState("");
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [gameState, setGameState] = useState(null);
@@ -1482,6 +1480,15 @@ export default function ContrabandGame() {
   const [bribeAmount, setBribeAmount] = useState(0);
   const [lastBribeUpdate, setLastBribeUpdate] = useState(0);
 
+  //read and fill global name
+  const [playerName, setPlayerName] = useState(
+    () => localStorage.getItem("gameHub_playerName") || ""
+  );
+  //set global name for all game
+  useEffect(() => {
+    if (playerName) localStorage.setItem("gameHub_playerName", playerName);
+  }, [playerName]);
+
   // --- Auth & Listener ---
   useEffect(() => {
     const initAuth = async () => {
@@ -1496,9 +1503,7 @@ export default function ContrabandGame() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (playerName) localStorage.setItem("contraband_playerName", playerName);
-  }, [playerName]);
+  
 
   // --- Session Restoration ---
   useEffect(() => {
