@@ -376,7 +376,7 @@ const FloatingBackground = ({ isShaking }) => (
       isShaking ? "animate-shake bg-red-900/20" : ""
     }`}
   >
-    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-900/20 via-gray-950 to-black" />
+    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-yellow-900/20 via-gray-950 to-black" />
     <div className="absolute top-0 left-0 w-full h-full opacity-10">
       {[...Array(20)].map((_, i) => {
         const fruitKeys = Object.keys(GOODS);
@@ -951,7 +951,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
 };
 
 const StashModal = ({ stash, onClose }) => (
-  <div className="fixed inset-0 bg-black/90 z-[160] flex items-center justify-center p-4 animate-in fade-in">
+  <div className="fixed inset-0 bg-black/90 z-160 flex items-center justify-center p-4 animate-in fade-in">
     <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[80vh]">
       <div className="flex justify-between items-center mb-4 border-b border-zinc-800 pb-2">
         <h3 className="text-xl font-bold text-white flex items-center gap-2">
@@ -1087,7 +1087,7 @@ const Card = ({ typeId, small, selected, onClick, faceDown }) => {
 };
 
 const LeaveConfirmModal = ({ onConfirm, onCancel, isHost, onLobby }) => (
-  <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 animate-in fade-in">
+  <div className="fixed inset-0 bg-black/90 z-200 flex items-center justify-center p-4 animate-in fade-in">
     <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 max-w-sm w-full text-center shadow-2xl">
       <h3 className="text-xl font-bold text-white mb-2">
         {isHost ? "Disband Operation?" : "Abandon Cargo?"}
@@ -1124,7 +1124,7 @@ const LeaveConfirmModal = ({ onConfirm, onCancel, isHost, onLobby }) => (
 );
 
 const FeedbackOverlay = ({ type, message, subtext, icon: Icon }) => (
-  <div className="fixed inset-0 z-[160] flex items-center justify-center pointer-events-none p-4">
+  <div className="fixed inset-0 z-160 flex items-center justify-center pointer-events-none p-4">
     <div
       className={`
       flex flex-col items-center justify-center p-8 md:p-12 rounded-3xl border-4 shadow-[0_0_50px_rgba(0,0,0,0.8)] 
@@ -1165,7 +1165,7 @@ const FeedbackOverlay = ({ type, message, subtext, icon: Icon }) => (
 const ShopModal = ({ isOpen, onClose, player, onBuy }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-in fade-in">
+    <div className="fixed inset-0 bg-black/90 z-100 flex items-center justify-center p-4 animate-in fade-in">
       <div className="bg-zinc-900 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col border border-yellow-600/30 shadow-2xl overflow-hidden">
         <div className="p-4 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center">
           <h2 className="text-2xl font-bold text-yellow-500 flex items-center gap-2">
@@ -1228,7 +1228,7 @@ const ShopModal = ({ isOpen, onClose, player, onBuy }) => {
 };
 
 const LogViewer = ({ logs, onClose }) => (
-  <div className="fixed top-16 right-4 w-64 max-h-60 bg-gray-900/95 border border-gray-700 rounded-xl z-[155] overflow-y-auto p-2 shadow-2xl">
+  <div className="fixed top-16 right-4 w-64 max-h-60 bg-gray-900/95 border border-gray-700 rounded-xl z-155 overflow-y-auto p-2 shadow-2xl">
     <div className="bg-zinc-900 w-full md:max-w-md h-full md:h-[70vh] rounded-none md:rounded-xl flex flex-col border-none md:border border-zinc-700 shadow-2xl">
       <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
         <h3 className="text-white font-bold text-lg flex items-center gap-2">
@@ -1273,7 +1273,7 @@ const LogViewer = ({ logs, onClose }) => (
 );
 
 const RulesModal = ({ onClose }) => (
-  <div className="fixed inset-0 bg-black/95 z-[150] flex items-center justify-center p-0 md:p-4 animate-in fade-in">
+  <div className="fixed inset-0 bg-black/95 z-150 flex items-center justify-center p-0 md:p-4 animate-in fade-in">
     <div className="bg-zinc-900 md:rounded-2xl w-full max-w-4xl h-full md:h-auto md:max-h-[90vh] overflow-hidden border-none md:border border-emerald-500/30 flex flex-col shadow-2xl">
       <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
         <h2 className="text-2xl font-bold text-white flex items-center gap-2 tracking-wider">
@@ -2668,7 +2668,7 @@ export default function ContrabandGame() {
             size={64}
             className="text-emerald-500 mx-auto mb-4 animate-bounce"
           />
-          <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-emerald-400 to-green-700 tracking-widest">
+          <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-linear-to-b from-emerald-400 to-green-700 tracking-widest">
             CONTRABAND
           </h1>
           <p className="text-white-400/60 tracking-[0.3em] uppercase mt-2">
@@ -2704,7 +2704,7 @@ export default function ContrabandGame() {
             <button
               onClick={joinRoom}
               disabled={loading}
-              className="bg-zinc-800 hover:bg-zinc-700 px-6 rounded font-bold flex-shrink-0"
+              className="bg-zinc-800 hover:bg-zinc-700 px-6 rounded font-bold shrink-0"
             >
               Join
             </button>
@@ -3215,7 +3215,7 @@ export default function ContrabandGame() {
                         {me.loadedCrate.cards.map((cId, i) => (
                           <div
                             key={i}
-                            className="relative group flex-shrink-0 transition-transform hover:-translate-y-2"
+                            className="relative group shrink-0 transition-transform hover:-translate-y-2"
                           >
                             <Card typeId={cId} small={false} />
                             {/* Lock Overlay */}
@@ -3327,7 +3327,7 @@ export default function ContrabandGame() {
                       <button
                         onClick={loadCrate}
                         disabled={selectedCards.length === 0}
-                        className="w-full py-3 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg"
+                        className="w-full py-3 bg-linear-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg"
                       >
                         LOAD CRATE
                       </button>

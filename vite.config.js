@@ -1,7 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from "@tailwindcss/vite" // Required for Tailwind v4
 
 export default defineConfig({
-  plugins: [react()],
-  base: '/contraband-game/', // MUST match your repo name
+  plugins: [
+    react(),
+    tailwindcss()
+  ],
+  base: '/contraband-game/', // Ensure your GitHub repo is named exactly this
 })
