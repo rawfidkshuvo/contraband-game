@@ -1013,7 +1013,7 @@ const Card = ({ typeId, small, selected, onClick, faceDown }) => {
     return (
       <div
         className={`
-        relative rounded-xl border-2 border-zinc-700 bg-zinc-800 
+        relative shrink-0 rounded-xl border-2 border-zinc-700 bg-zinc-800 
         flex flex-col items-center justify-center shadow-lg
         ${small ? "w-10 h-14" : "w-20 h-32"}
       `}
@@ -1029,7 +1029,7 @@ const Card = ({ typeId, small, selected, onClick, faceDown }) => {
     <div
       onClick={onClick}
       className={`
-        relative rounded-xl border-2 flex flex-col items-center justify-between shadow-lg transition-all 
+        relative shrink-0 rounded-xl border-2 flex flex-col items-center justify-between shadow-lg transition-all 
         ${
           selected
             ? "ring-4 ring-yellow-400 -translate-y-2 z-10 scale-105"
