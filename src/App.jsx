@@ -61,6 +61,7 @@ import {
   TrendingDown,
   Trash,
   Sparkles,
+  Copy,
 } from "lucide-react";
 
 // --- Firebase Config ---
@@ -70,7 +71,7 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -422,7 +423,7 @@ const CardIcon = ({ typeId, size = 12 }) => {
 
 const ReportCard = ({ players, roundData, isFinal }) => {
   const [activeTab, setActiveTab] = useState(
-    isFinal ? "FINAL" : Math.max(0, roundData.length - 1)
+    isFinal ? "FINAL" : Math.max(0, roundData.length - 1),
   );
 
   const tabs = isFinal
@@ -435,15 +436,15 @@ const ReportCard = ({ players, roundData, isFinal }) => {
     if (isFinalView) {
       displayData = players.map((p) => {
         let stashBonus = 0;
-        
+
         // Accumulators
         let totalRoleBonus = 0;
         let bonusBreakdown = [];
-        
+
         let totalEventImpact = 0;
         let eventBreakdown = [];
-        
-        let totalInspectionNet = 0; 
+
+        let totalInspectionNet = 0;
         let inspectionBreakdown = [];
 
         let totalMarketSpend = 0;
@@ -459,7 +460,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
             if (rStats.roleBonus > 0) {
               totalRoleBonus += rStats.roleBonus;
               bonusBreakdown.push(
-                `R${i + 1} (${ROLES[rStats.role]?.name}): +$${rStats.roleBonus}`
+                `R${i + 1} (${ROLES[rStats.role]?.name}): +$${rStats.roleBonus}`,
               );
             }
 
@@ -469,42 +470,51 @@ const ReportCard = ({ players, roundData, isFinal }) => {
               eventBreakdown.push(
                 `R${i + 1} (${r.event?.name}): ${
                   rStats.eventImpact > 0 ? "+" : ""
-                }$${rStats.eventImpact}`
+                }$${rStats.eventImpact}`,
               );
             }
 
             // 3. Black Market Purchases
             if (rStats.marketItems && rStats.marketItems.length > 0) {
-              rStats.marketItems.forEach(itemId => {
+              rStats.marketItems.forEach((itemId) => {
                 const item = SHOP_ITEMS[itemId];
                 if (item) {
                   totalMarketSpend += item.cost;
-                  marketBreakdown.push(`R${i+1}: ${item.name} (-$${item.cost})`);
+                  marketBreakdown.push(
+                    `R${i + 1}: ${item.name} (-$${item.cost})`,
+                  );
                 }
               });
             }
 
             // 4. Inspection Impact (Scanning transactions)
             const inspectionLabels = [
-              "Fine Paid", "Fine Collected",
-              "Bribe Paid", "Bribe Accepted", "Bribe Returned",
-              "Trap Exploded", "Trap Reward",
-              "Wrongful Search", "Clean Bonus"
+              "Fine Paid",
+              "Fine Collected",
+              "Bribe Paid",
+              "Bribe Accepted",
+              "Bribe Returned",
+              "Trap Exploded",
+              "Trap Reward",
+              "Wrongful Search",
+              "Clean Bonus",
             ];
 
             if (rStats.transactions) {
-              rStats.transactions.forEach(t => {
+              rStats.transactions.forEach((t) => {
                 if (inspectionLabels.includes(t.label)) {
                   totalInspectionNet += t.amount;
                   if (Math.abs(t.amount) > 0) {
-                     // Shorten labels for UI fit
-                     let label = t.label;
-                     if(label === "Fine Paid") label = "Fined";
-                     if(label === "Fine Collected") label = "Fine Coll.";
-                     if(label === "Trap Exploded") label = "Trap Hit";
-                     if(label === "Wrongful Search") label = "Clean";
-                     
-                     inspectionBreakdown.push(`R${i+1}: ${label} (${t.amount > 0 ? "+" : ""}${t.amount})`);
+                    // Shorten labels for UI fit
+                    let label = t.label;
+                    if (label === "Fine Paid") label = "Fined";
+                    if (label === "Fine Collected") label = "Fine Coll.";
+                    if (label === "Trap Exploded") label = "Trap Hit";
+                    if (label === "Wrongful Search") label = "Clean";
+
+                    inspectionBreakdown.push(
+                      `R${i + 1}: ${label} (${t.amount > 0 ? "+" : ""}${t.amount})`,
+                    );
                   }
                 }
               });
@@ -515,7 +525,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
         const total = Math.floor(p.coins + stashBonus - BANK_LOAN);
         const stashTotal = stash.reduce(
           (acc, c) => acc + (GOODS[c]?.val || 0),
-          0
+          0,
         );
 
         return {
@@ -524,25 +534,25 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           role: p.role,
           cash: p.coins,
           stashVal: stashTotal,
-          
+
           bonus: Math.floor(totalRoleBonus),
           bonusDetails: bonusBreakdown,
-          
+
           eventBonus: totalEventImpact,
           eventDetails: eventBreakdown,
-          
+
           inspectionNet: totalInspectionNet,
           inspectionDetails: inspectionBreakdown,
 
           marketCost: totalMarketSpend,
           marketDetails: marketBreakdown,
-          
+
           loan: -BANK_LOAN,
           total,
           isWinner: false,
         };
       });
-      
+
       displayData.sort((a, b) => b.total - a.total);
       if (displayData.length > 0) displayData[0].isWinner = true;
     } else {
@@ -551,14 +561,14 @@ const ReportCard = ({ players, roundData, isFinal }) => {
         typeof activeTab === "string"
           ? parseInt(activeTab.split(" ")[1]) - 1
           : activeTab;
-      
+
       const roundEntry = Array.isArray(roundData)
         ? roundData[
             activeTab === "FINAL"
               ? 0
               : typeof activeTab === "number"
-              ? activeTab
-              : parseInt(activeTab.split(" ")[1]) - 1
+                ? activeTab
+                : parseInt(activeTab.split(" ")[1]) - 1
           ]
         : null;
       const stats = roundEntry ? roundEntry.stats : null;
@@ -687,41 +697,49 @@ const ReportCard = ({ players, roundData, isFinal }) => {
 
                     {/* Inspection Impact - With Details */}
                     <td className="px-6 py-4 text-right align-top">
-                       <div className="flex flex-col items-end">
+                      <div className="flex flex-col items-end">
                         <span
                           className={`font-mono ${
                             d.inspectionNet > 0
                               ? "text-purple-400"
                               : d.inspectionNet < 0
-                              ? "text-red-400"
-                              : "text-zinc-600"
+                                ? "text-red-400"
+                                : "text-zinc-600"
                           }`}
                         >
                           {d.inspectionNet > 0 ? "+" : ""}
                           {d.inspectionNet}
                         </span>
                         {d.inspectionDetails.map((det, idx) => (
-                           <span key={idx} className="text-[9px] text-zinc-500 whitespace-nowrap">
-                                {det}
-                           </span>
+                          <span
+                            key={idx}
+                            className="text-[9px] text-zinc-500 whitespace-nowrap"
+                          >
+                            {det}
+                          </span>
                         ))}
                       </div>
                     </td>
 
                     {/* Black Market - With Details */}
                     <td className="px-6 py-4 text-right align-top">
-                        <div className="flex flex-col items-end">
-                            <span className={`font-mono ${d.marketCost > 0 ? "text-orange-400" : "text-zinc-600"}`}>
-                                -${d.marketCost}
-                            </span>
-                            {d.marketDetails.map((det, idx) => (
-                                <span key={idx} className="text-[9px] text-zinc-500 whitespace-nowrap">
-                                    {det}
-                                </span>
-                            ))}
-                        </div>
+                      <div className="flex flex-col items-end">
+                        <span
+                          className={`font-mono ${d.marketCost > 0 ? "text-orange-400" : "text-zinc-600"}`}
+                        >
+                          -${d.marketCost}
+                        </span>
+                        {d.marketDetails.map((det, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[9px] text-zinc-500 whitespace-nowrap"
+                          >
+                            {det}
+                          </span>
+                        ))}
+                      </div>
                     </td>
-                    
+
                     {/* Role Bonuses */}
                     <td className="px-6 py-4 text-right align-top">
                       <div className="flex flex-col items-end">
@@ -729,7 +747,10 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                           +{d.bonus}
                         </span>
                         {d.bonusDetails.map((det, idx) => (
-                          <span key={idx} className="text-[9px] text-zinc-500 whitespace-nowrap">
+                          <span
+                            key={idx}
+                            className="text-[9px] text-zinc-500 whitespace-nowrap"
+                          >
                             {det}
                           </span>
                         ))}
@@ -744,15 +765,18 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                             d.eventBonus > 0
                               ? "text-blue-400"
                               : d.eventBonus < 0
-                              ? "text-red-400"
-                              : "text-zinc-600"
+                                ? "text-red-400"
+                                : "text-zinc-600"
                           }`}
                         >
                           {d.eventBonus > 0 ? "+" : ""}
                           {d.eventBonus}
                         </span>
                         {d.eventDetails.map((det, idx) => (
-                          <span key={idx} className="text-[9px] text-zinc-500 whitespace-nowrap">
+                          <span
+                            key={idx}
+                            className="text-[9px] text-zinc-500 whitespace-nowrap"
+                          >
                             {det}
                           </span>
                         ))}
@@ -768,8 +792,8 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   </tr>
                 );
               } else {
-                 // ... (Round View Row - Unchanged) ...
-                 return (
+                // ... (Round View Row - Unchanged) ...
+                return (
                   <tr key={d.id} className="group hover:bg-zinc-800/30">
                     <td className="px-6 py-4 align-top">
                       <div className="font-medium text-white mb-1">
@@ -1039,8 +1063,8 @@ const Card = ({ typeId, small, selected, onClick, faceDown }) => {
           isTrap
             ? "bg-orange-950/50 border-orange-600/50"
             : isIllegal
-            ? "bg-red-950/30 border-red-900/50"
-            : "bg-emerald-950/30 border-emerald-900/50"
+              ? "bg-red-950/30 border-red-900/50"
+              : "bg-emerald-950/30 border-emerald-900/50"
         }
         ${small ? "w-12 h-16 p-1" : "w-24 h-36 md:w-32 md:h-44 p-2 md:p-3"}
         ${onClick ? "cursor-pointer" : ""}
@@ -1212,8 +1236,8 @@ const ShopModal = ({ isOpen, onClose, player, onBuy }) => {
                       hasItem
                         ? "bg-zinc-700 text-zinc-500 cursor-default"
                         : canAfford
-                        ? "bg-yellow-600 hover:bg-yellow-500 text-black shadow-lg shadow-yellow-900/20"
-                        : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
+                          ? "bg-yellow-600 hover:bg-yellow-500 text-black shadow-lg shadow-yellow-900/20"
+                          : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
                     }`}
                 >
                   {hasItem ? "OWNED" : canAfford ? "BUY" : "TOO POOR"}
@@ -1249,10 +1273,10 @@ const LogViewer = ({ logs, onClose }) => (
               log.type === "danger"
                 ? "bg-red-900/10 border-red-500 text-red-300"
                 : log.type === "success"
-                ? "bg-green-900/10 border-green-500 text-green-300"
-                : log.type === "bribe"
-                ? "bg-yellow-900/10 border-yellow-500 text-yellow-300"
-                : "bg-zinc-800/50 border-zinc-600 text-zinc-400"
+                  ? "bg-green-900/10 border-green-500 text-green-300"
+                  : log.type === "bribe"
+                    ? "bg-yellow-900/10 border-yellow-500 text-yellow-300"
+                    : "bg-zinc-800/50 border-zinc-600 text-zinc-400"
             }`}
           >
             <span className="opacity-50 mr-2 font-mono">
@@ -1485,7 +1509,7 @@ const RulesModal = ({ onClose }) => (
 export default function ContrabandGame() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState("menu");
-  
+
   const [roomId, setRoomId] = useState("");
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [gameState, setGameState] = useState(null);
@@ -1510,7 +1534,7 @@ export default function ContrabandGame() {
 
   //read and fill global name
   const [playerName, setPlayerName] = useState(
-    () => localStorage.getItem("gameHub_playerName") || ""
+    () => localStorage.getItem("gameHub_playerName") || "",
   );
   //set global name for all game
   useEffect(() => {
@@ -1530,8 +1554,6 @@ export default function ContrabandGame() {
     const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
   }, []);
-
-  
 
   // --- Session Restoration ---
   useEffect(() => {
@@ -1568,7 +1590,7 @@ export default function ContrabandGame() {
           ) {
             // Check if this feedback is restricted to a specific user
             const isVisible =
-              !data.feedbackTrigger.visibleTo || 
+              !data.feedbackTrigger.visibleTo ||
               data.feedbackTrigger.visibleTo === user.uid;
 
             if (isVisible) {
@@ -1583,7 +1605,7 @@ export default function ContrabandGame() {
           localStorage.removeItem("contraband_roomId");
           setError("Room Closed.");
         }
-      }
+      },
     );
     return () => unsub();
   }, [roomId, user, gameState?.feedbackTrigger?.id]); // Ensure dependencies are correct
@@ -1649,7 +1671,7 @@ export default function ContrabandGame() {
     };
     await setDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", newId),
-      initialData
+      initialData,
     );
     localStorage.setItem("contraband_roomId", newId);
     setRoomId(newId);
@@ -1667,7 +1689,7 @@ export default function ContrabandGame() {
         "public",
         "data",
         "rooms",
-        roomCodeInput
+        roomCodeInput,
       );
       const snap = await getDoc(ref);
       if (!snap.exists()) throw new Error("Room not found.");
@@ -1722,8 +1744,23 @@ export default function ContrabandGame() {
     const updatedPlayers = gameState.players.filter((p) => p.id !== playerId);
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
-      { players: updatedPlayers }
+      { players: updatedPlayers },
     );
+  };
+
+  const copyToClipboard = () => {
+    try {
+      navigator.clipboard.writeText(roomId);
+      triggerFeedback("neutral", "COPIED!", "", CheckCircle);
+    } catch (e) {
+      const el = document.createElement("textarea");
+      el.value = roomId;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      triggerFeedback("neutral", "COPIED!", "", CheckCircle);
+    }
   };
 
   const returnToLobby = async () => {
@@ -1752,7 +1789,7 @@ export default function ContrabandGame() {
         inspectorOrder: [],
         roundHistory: [],
         currentRoundStats: {},
-      }
+      },
     );
     setShowLeaveConfirm(false);
   };
@@ -1818,13 +1855,13 @@ export default function ContrabandGame() {
             type: "neutral",
           },
         ],
-      }
+      },
     );
   };
 
   const toggleReady = async () => {
     const players = gameState.players.map((p) =>
-      p.id === user.uid ? { ...p, ready: !p.ready } : p
+      p.id === user.uid ? { ...p, ready: !p.ready } : p,
     );
 
     // LOGIC 1: End of Market Phase
@@ -1844,7 +1881,7 @@ export default function ContrabandGame() {
             text: "Loading Phase Begun.",
             type: "neutral",
           }),
-        }
+        },
       );
       return;
     }
@@ -1865,7 +1902,7 @@ export default function ContrabandGame() {
     // Standard ready toggle update
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
-      { players }
+      { players },
     );
   };
 
@@ -1897,7 +1934,7 @@ export default function ContrabandGame() {
     });
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
-      { players, deck: updatedDeck, currentRoundStats: stats }
+      { players, deck: updatedDeck, currentRoundStats: stats },
     );
   };
 
@@ -1921,7 +1958,7 @@ export default function ContrabandGame() {
     });
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
-      { players }
+      { players },
     );
   };
 
@@ -1949,7 +1986,7 @@ export default function ContrabandGame() {
     };
     const inspectorId = players[gameState.inspectorIndex].id;
     const allLoaded = players.every(
-      (p) => p.id === inspectorId || p.loadedCrate !== null
+      (p) => p.id === inspectorId || p.loadedCrate !== null,
     );
     let update = { players };
     if (allLoaded) {
@@ -1962,7 +1999,7 @@ export default function ContrabandGame() {
     }
     await updateDoc(
       doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
-      update
+      update,
     );
     setSelectedCards([]);
     setBribeAmount(0);
@@ -1979,7 +2016,7 @@ export default function ContrabandGame() {
     const inspectorHasScanner = inspector.upgrades?.includes("SCANNER");
     const targetHasConceal = target.upgrades?.includes("CONCEAL");
     const snitchBonus = players.filter(
-      (p) => p.role === "SNITCH" && p.id !== target.id
+      (p) => p.role === "SNITCH" && p.id !== target.id,
     );
 
     let stats = { ...gameState.currentRoundStats };
@@ -2041,7 +2078,7 @@ export default function ContrabandGame() {
         const illegalItems = items.filter((c) => GOODS[c].type === "ILLEGAL");
         const val = illegalItems.reduce(
           (acc, c) => acc + (GOODS[c].val || 0),
-          0
+          0,
         );
         bonus = Math.floor(val * 0.2);
       }
@@ -2089,7 +2126,7 @@ export default function ContrabandGame() {
             subtext: `Found: ${GOODS[randomCard].name}`,
             visibleTo: inspector.id,
           },
-        }
+        },
       );
       return;
     }
@@ -2146,7 +2183,7 @@ export default function ContrabandGame() {
 
       // SALES CALCULATION
       const { total: saleValue, impact } = calculateSaleStats(
-        target.loadedCrate.cards
+        target.loadedCrate.cards,
       );
       players[targetIdx].coins += saleValue;
 
@@ -2228,7 +2265,7 @@ export default function ContrabandGame() {
         };
       } else {
         let illegalCards = cards.filter(
-          (c) => GOODS[c].type === "ILLEGAL" || c !== declared
+          (c) => GOODS[c].type === "ILLEGAL" || c !== declared,
         );
 
         if (targetHasConceal && illegalCards.length > 0) {
@@ -2392,7 +2429,7 @@ export default function ContrabandGame() {
 
     players[targetIdx].loadedCrate = null;
     const pending = players.filter(
-      (p) => p.id !== inspector.id && p.loadedCrate !== null
+      (p) => p.id !== inspector.id && p.loadedCrate !== null,
     );
 
     if (pending.length === 0) {
@@ -2409,7 +2446,7 @@ export default function ContrabandGame() {
           roundHistory: arrayUnion(historyEntry),
           turnState: "ROUND_SUMMARY",
           feedbackTrigger: fb,
-        }
+        },
       );
     } else {
       await updateDoc(
@@ -2419,7 +2456,7 @@ export default function ContrabandGame() {
           logs: arrayUnion(...logs),
           currentRoundStats: stats,
           feedbackTrigger: fb,
-        }
+        },
       );
     }
   };
@@ -2454,7 +2491,7 @@ export default function ContrabandGame() {
             message: "GAME OVER",
             subtext: `${finalScores[0].name} wins!`,
           },
-        }
+        },
       );
       return;
     }
@@ -2519,7 +2556,7 @@ export default function ContrabandGame() {
           text: `Round ${nextRound} Started. Event: ${nextEvent.name}`,
           type: "neutral",
         }),
-      }
+      },
     );
   };
 
@@ -2559,7 +2596,7 @@ export default function ContrabandGame() {
             message: "GAME OVER",
             subtext: `${finalScores[0].name} wins!`,
           },
-        }
+        },
       );
       return;
     }
@@ -2620,7 +2657,7 @@ export default function ContrabandGame() {
           type: "neutral",
         }),
         feedbackTrigger: fb, // Show the result of the inspection that just finished
-      }
+      },
     );
   };
 
@@ -2750,9 +2787,19 @@ export default function ContrabandGame() {
 
         <div className="z-10 w-full max-w-lg bg-zinc-900/90 backdrop-blur p-8 rounded-2xl border border-emerald-900/50 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-serif text-emerald-500">
-              Station: <span className="text-white font-mono">{roomId}</span>
-            </h2>
+            {/* Grouping Title and Copy Button together on the left */}
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-serif text-emerald-500">
+                Station: <span className="text-white font-mono">{roomId}</span>
+              </h2>
+              <button
+                onClick={copyToClipboard}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
+                title="Copy Room ID"
+              >
+                <Copy size={16} />
+              </button>
+            </div>
             <button
               onClick={() => setShowLeaveConfirm(true)}
               className="p-2 hover:bg-red-900/50 rounded text-red-400"
@@ -2832,8 +2879,8 @@ export default function ContrabandGame() {
               feedback.type === "danger"
                 ? Siren
                 : feedback.type === "bribe"
-                ? Handshake
-                : AlertOctagon
+                  ? Handshake
+                  : AlertOctagon
             }
           />
         )}
@@ -2945,10 +2992,10 @@ export default function ContrabandGame() {
                 {gameState.turnState === "SHOPPING"
                   ? "MARKET PHASE"
                   : gameState.turnState === "LOADING"
-                  ? "LOAD CRATES"
-                  : gameState.turnState === "ROUND_SUMMARY"
-                  ? "ROUND REPORT"
-                  : `INSPECTOR: ${inspector.name}`}
+                    ? "LOAD CRATES"
+                    : gameState.turnState === "ROUND_SUMMARY"
+                      ? "ROUND REPORT"
+                      : `INSPECTOR: ${inspector.name}`}
               </span>
             </div>
           </div>
@@ -3259,7 +3306,7 @@ export default function ContrabandGame() {
                         onClick={() => {
                           if (selectedCards.includes(i))
                             setSelectedCards(
-                              selectedCards.filter((idx) => idx !== i)
+                              selectedCards.filter((idx) => idx !== i),
                             );
                           else if (
                             selectedCards.length <
@@ -3356,7 +3403,7 @@ export default function ContrabandGame() {
                           min="0"
                           max={Math.min(
                             10000,
-                            me.coins + (me.loadedCrate?.bribe || 0)
+                            me.coins + (me.loadedCrate?.bribe || 0),
                           )}
                           step="10"
                           value={bribeAmount}
