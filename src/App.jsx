@@ -1640,10 +1640,14 @@ export default function ContrabandGame() {
   const createRoom = async () => {
     if (!playerName.trim()) return setError("Codename required.");
     setLoading(true);
-    const newId = Math.random().toString(36).substring(2, 7).toUpperCase();
+    const chars = "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
+    let newRoomId = "";
+    for (let i = 0; i < 6; i++) {
+      newRoomId += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
 
     const initialData = {
-      roomId: newId,
+      roomId: newRoomId,
       hostId: user.uid,
       status: "lobby",
       players: [
@@ -1670,11 +1674,11 @@ export default function ContrabandGame() {
       currentRoundStats: {},
     };
     await setDoc(
-      doc(db, "artifacts", APP_ID, "public", "data", "rooms", newId),
+      doc(db, "artifacts", APP_ID, "public", "data", "rooms", newRoomId),
       initialData,
     );
-    localStorage.setItem("contraband_roomId", newId);
-    setRoomId(newId);
+    localStorage.setItem("contraband_roomId", newRoomId);
+    setRoomId(newRoomId);
     setLoading(false);
   };
 
