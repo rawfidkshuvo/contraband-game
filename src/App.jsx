@@ -2800,31 +2800,38 @@ export default function ContrabandGame() {
 
         <div className="z-10 w-full max-w-lg bg-zinc-900/90 backdrop-blur p-8 rounded-2xl border border-emerald-900/50 shadow-2xl">
           <div className="flex justify-between items-center mb-6">
-            {/* Grouping Title and Copy Button together on the left */}
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-serif text-emerald-500">
-                Station: <span className="text-white font-mono">{roomId}</span>
+            <div>
+              <h2 className="text-lg md:text-xl text-green-500 font-bold uppercase">
+                Station:
               </h2>
-              {/* 2. Container set to relative for positioning the popup */}
-              <div className="relative">
-                <button
-                  onClick={copyToClipboard}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
-                >
-                  {/* Optional: Change icon to checkmark when copied */}
-                  {isCopied ? (
-                    <CheckCircle size={16} className="text-green-500" />
-                  ) : (
-                    <Copy size={16} />
-                  )}
-                </button>
 
-                {/* 3. The Copied Popup */}
-                {isCopied && (
-                  <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-green-500 text-black text-xs font-bold px-2 py-1 rounded shadow-lg animate-fade-in-up whitespace-nowrap">
-                    Copied!
-                  </div>
-                )}
+              {/* Flex container to align ID and Button side-by-side */}
+              <div className="flex items-center gap-3 mt-1">
+                <div className="text-2xl md:text-3xl font-mono text-white font-black">
+                  {gameState.roomId}
+                </div>
+
+                {/* 2. Container set to relative for positioning the popup */}
+                <div className="relative">
+                  <button
+                    onClick={copyToClipboard}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
+                  >
+                    {/* Optional: Change icon to checkmark when copied */}
+                    {isCopied ? (
+                      <CheckCircle size={16} className="text-green-500" />
+                    ) : (
+                      <Copy size={16} />
+                    )}
+                  </button>
+
+                  {/* 3. The Copied Popup */}
+                  {isCopied && (
+                    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-green-500 text-black text-xs font-bold px-2 py-1 rounded shadow-lg animate-fade-in-up whitespace-nowrap">
+                      Copied!
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <button
