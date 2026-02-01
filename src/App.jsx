@@ -658,6 +658,8 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           </thead>
           <tbody className="divide-y divide-zinc-800 text-sm">
             {displayData.map((d, i) => {
+              const RoleIcon = ROLES[d.role]?.icon;
+              const RoleColor = ROLES[d.role]?.color;
               if (isFinalView) {
                 return (
                   <tr
@@ -802,9 +804,12 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                       </div>
                       <div className="flex items-center gap-1 text-xs text-zinc-500 mb-2">
                         {d.isInspector ? (
-                          <ShieldCheck size={12} className="text-blue-400" />
+                          <Siren size={12} className="text-red-500" />
                         ) : (
-                          <User size={12} />
+                          <RoleIcon
+                            size={12}
+                            className={RoleColor ?? "text-zinc-400"}
+                          />
                         )}
                         {d.isInspector ? "Inspector" : ROLES[d.role]?.name}
                       </div>
