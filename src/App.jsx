@@ -3078,13 +3078,16 @@ export default function ContrabandGame() {
               // --- CHANGE 1: Determine Icon (Siren for Inspector, Role for others) ---
               let StatusIcon = User;
               let iconColor = "text-zinc-500";
+              let StatusName = "Player";
 
               if (isInsp) {
                 StatusIcon = Siren;
                 iconColor = "text-red-500 animate-pulse"; // Added pulse for visibility
+                StatusName = "Inspector";
               } else if (p.role) {
                 StatusIcon = ROLES[p.role].icon;
                 iconColor = ROLES[p.role].color;
+                StatusName = ROLES[p.role].name;
               }
               // -----------------------------------------------------------------------
 
@@ -3098,21 +3101,30 @@ export default function ContrabandGame() {
                   } ${p.loadedCrate ? "bg-zinc-800" : ""}`}
                 >
                   {/* Top Right Icon */}
-                  <div className="absolute top-1 right-1 flex items-center gap-1 opacity-70">
-                    <StatusIcon size={12} className={iconColor} />
-                  </div>
+                  <div className="relative flex flex-col items-center pt-4">
+                    {/* Status */}
+                    <div className="absolute top-1 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-70 text-[9px]">
+                      <StatusIcon size={12} className={iconColor} />
+                      <span className="uppercase animate-pulse tracking-tight">
+                        {StatusName}
+                      </span>
+                    </div>
 
-                  <User
-                    size={24}
-                    className={isInsp ? "text-yellow-500" : "text-zinc-600"}
-                  />
-                  <span
-                    className={`font-bold text-xs truncate w-full text-center mt-1 ${
-                      isInsp ? "text-yellow-200" : "text-zinc-400"
-                    }`}
-                  >
-                    {p.name}
-                  </span>
+                    {/* User icon */}
+                    <User
+                      size={24}
+                      className={isInsp ? "text-yellow-500" : "text-zinc-600"}
+                    />
+
+                    {/* Name */}
+                    <span
+                      className={`font-bold text-xs truncate w-full text-center mt-1 ${
+                        isInsp ? "text-yellow-200" : "text-zinc-400"
+                      }`}
+                    >
+                      {p.name}
+                    </span>
+                  </div>
 
                   {/* --- NEW CODE STARTS HERE --- */}
                   {p.upgrades && p.upgrades.length > 0 && (
@@ -3154,7 +3166,7 @@ export default function ContrabandGame() {
                       {isInspector &&
                         me.id === inspector.id &&
                         gameState.turnState === "INSPECTING" && (
-                          <div className="grid grid-cols-2 gap-1 mt-2">
+                          <div className="grid grid-cols-2 gap-3 mt-3">
                             <button
                               onClick={() => inspectCrate(p.id, "PASS")}
                               className="bg-emerald-700 hover:bg-emerald-600 text-[8px] py-2 rounded text-white font-bold"
@@ -3183,7 +3195,7 @@ export default function ContrabandGame() {
                                   onClick={() => inspectCrate(p.id, "PEEK")}
                                   className="col-span-2 bg-blue-600 hover:bg-blue-500 text-[9px] py-1 rounded text-white font-bold flex items-center justify-center gap-1"
                                 >
-                                  <Scan size={10} /> SCAN (1)
+                                  <Scan size={10} /> SCAN
                                 </button>
                               )}
                           </div>
