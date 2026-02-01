@@ -63,6 +63,8 @@ import {
   Sparkles,
   Copy,
   Loader,
+  Shirt,
+  Flame,
 } from "lucide-react";
 
 // --- Firebase Config ---
@@ -186,24 +188,39 @@ const SHOP_ITEMS = {
 };
 
 const GOODS = {
-  // LEGAL
-  MEDS: {
-    id: "MEDS",
-    name: "Medkits",
-    val: 200,
-    penalty: 200,
-    type: "LEGAL",
-    icon: Cross,
-    color: "text-green-400",
-  },
+  // --- LEGAL GOODS ---
   FOOD: {
     id: "FOOD",
     name: "Rations",
-    val: 300,
+    val: 200,
     penalty: 200,
     type: "LEGAL",
     icon: Utensils,
+    color: "text-green-200",
+    kingBonus: 1000,
+    queenBonus: 600,
+  },
+  MEDS: {
+    id: "MEDS",
+    name: "Medkits",
+    val: 300,
+    penalty: 200,
+    type: "LEGAL",
+    icon: Cross,
     color: "text-green-300",
+    kingBonus: 1500,
+    queenBonus: 900,
+  },
+  TEXTILE: {
+    id: "TEXTILE",
+    name: "Uniforms",
+    val: 300,
+    penalty: 200,
+    type: "LEGAL",
+    icon: Shirt,
+    color: "text-green-400",
+    kingBonus: 1500,
+    queenBonus: 900,
   },
   PARTS: {
     id: "PARTS",
@@ -212,37 +229,129 @@ const GOODS = {
     penalty: 200,
     type: "LEGAL",
     icon: Hammer,
-    color: "text-green-200",
+    color: "text-green-500",
+    kingBonus: 2000,
+    queenBonus: 1200,
   },
-  // CONTRABAND
+
+  // --- CONTRABAND ---
   CHIP: {
     id: "CHIP",
     name: "AI Core",
-    val: 700,
+    val: 600,
     penalty: 400,
     type: "ILLEGAL",
     icon: Cpu,
-    color: "text-red-400",
+    color: "text-red-200",
   },
   WEAPON: {
     id: "WEAPON",
     name: "Plasma Rifle",
-    val: 800,
+    val: 700,
     penalty: 400,
     type: "ILLEGAL",
     icon: Zap,
-    color: "text-red-500",
+    color: "text-red-300",
   },
   NARCO: {
     id: "NARCO",
     name: "Stims",
-    val: 900,
+    val: 800,
     penalty: 400,
     type: "ILLEGAL",
     icon: Skull,
-    color: "text-purple-500",
+    color: "text-red-400",
   },
-  // SPECIAL
+  SPICE: {
+    id: "SPICE",
+    name: "Red Dust",
+    val: 900,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Flame,
+    color: "text-red-500",
+  },
+
+  // --- ROYAL GOODS (Contraband that counts as Legal for Bonuses) ---
+  ROYAL_FOOD_2: {
+    id: "ROYAL_FOOD_2",
+    name: "Ambrosia",
+    val: 400,
+    penalty: 300,
+    type: "ILLEGAL",
+    icon: Utensils,
+    color: "text-yellow-200",
+    legalType: "FOOD",
+    legalCount: 2,
+  },
+  ROYAL_MEDS_2: {
+    id: "ROYAL_MEDS_2",
+    name: "Panacea Vial",
+    val: 600,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Cross,
+    color: "text-yellow-300",
+    legalType: "MEDS", // Counts as Meds
+    legalCount: 2, // Counts as 3 Meds
+  },
+  ROYAL_TEXTILE_2: {
+    id: "ROYAL_TEXTILE_2",
+    name: "Neo-Silk",
+    val: 600,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Shirt,
+    color: "text-yellow-400",
+    legalType: "TEXTILE",
+    legalCount: 2,
+  },
+  ROYAL_FOOD_3: {
+    id: "ROYAL_FOOD_3",
+    name: "Nectar of Gods",
+    val: 600,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Utensils,
+    color: "text-yellow-200",
+    legalType: "FOOD",
+    legalCount: 3,
+  },
+  ROYAL_MEDS_3: {
+    id: "ROYAL_MEDS_3",
+    name: "Phoenix Serum",
+    val: 900,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Cross,
+    color: "text-yellow-300",
+    legalType: "MEDS", // Counts as Meds
+    legalCount: 3, // Counts as 3 Meds
+  },
+  ROYAL_TEXTILE_3: {
+    id: "ROYAL_TEXTILE_3",
+    name: "Astral Velvet",
+    val: 900,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Shirt,
+    color: "text-yellow-400",
+    legalType: "TEXTILE",
+    legalCount: 3,
+  },
+  ROYAL_PARTS: {
+    id: "ROYAL_PARTS",
+    name: "Quantum Gear",
+    val: 800,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Hammer,
+    color: "text-yellow-500",
+    legalType: "PARTS",
+    legalCount: 2,
+  },
+
+  // --- SPECIAL ---
   TRAP: {
     id: "TRAP",
     name: "Booby Trap",
@@ -250,7 +359,7 @@ const GOODS = {
     penalty: 0,
     type: "TRAP",
     icon: Bomb,
-    color: "text-orange-500",
+    color: "text-orange-600",
     desc: "If opened: Inspector pays $200",
   },
 };
@@ -276,19 +385,36 @@ const ContrabandLogoBig = () => (
 // Deck Template - Scaled for Player Count
 const generateDeck = (playerCount) => {
   let deck = [];
-  // Linear scaling: ~35 cards per player
+
+  // Base counts per player (Balanced for game length)
   const counts = {
-    MEDS: 6 * playerCount,
+    MEDS: 8 * playerCount,
     FOOD: 6 * playerCount,
     PARTS: 6 * playerCount,
+    TEXTILE: 4 * playerCount,
+
     CHIP: 4 * playerCount,
     WEAPON: 4 * playerCount,
-    NARCO: 4 * playerCount,
-    TRAP: 2 * playerCount,
+    NARCO: 2 * playerCount,
+    SPICE: 1 * playerCount,
+
+    ROYAL_MEDS_2: 2,
+    ROYAL_FOOD_2: 2,
+    ROYAL_TEXTILE_2: 2,
+    ROYAL_PARTS: 2,
+    ROYAL_MEDS_3: 1,
+    ROYAL_FOOD_3: 2,
+    ROYAL_TEXTILE_3: 1,
   };
+
+  // Add standard cards
   Object.entries(counts).forEach(([type, count]) => {
     for (let i = 0; i < count; i++) deck.push(type);
   });
+
+  // Add exactly 1 Trap per player
+  for (let i = 0; i < playerCount; i++) deck.push("TRAP");
+
   return deck;
 };
 
@@ -423,13 +549,212 @@ const CardIcon = ({ typeId, size = 12 }) => {
 };
 
 const ReportCard = ({ players, roundData, isFinal }) => {
+  // 1. Add "STASH" to the initial active tab logic if preferred, or keep FINAL
   const [activeTab, setActiveTab] = useState(
     isFinal ? "FINAL" : Math.max(0, roundData.length - 1),
   );
 
+  // 2. Update Tabs to include STASH
   const tabs = isFinal
-    ? ["FINAL", ...roundData.map((_, i) => `ROUND ${i + 1}`)]
+    ? ["FINAL", "STASH", ...roundData.map((_, i) => `ROUND ${i + 1}`)]
     : [];
+
+  // --- NEW: Helper to render the detailed Stash View ---
+  const renderStashView = () => {
+    // Sort players by final score for display order
+    const sortedPlayers = [...players].sort(
+      (a, b) => b.finalScore - a.finalScore,
+    );
+
+    return (
+      <div className="flex flex-row gap-4 p-6 bg-zinc-900/50 overflow-x-auto pb-8 snap-x">
+        {sortedPlayers.map((p, i) => {
+          // Categorize and Count Items
+          const legal = [];
+          const royal = [];
+          const contraband = [];
+
+          const counts = {};
+          p.stash.forEach((id) => {
+            counts[id] = (counts[id] || 0) + 1;
+          });
+
+          Object.entries(counts).forEach(([id, qty]) => {
+            const item = GOODS[id];
+            if (!item) return;
+
+            const entry = { ...item, qty };
+
+            if (item.id.startsWith("ROYAL_")) {
+              royal.push(entry);
+            } else if (item.type === "ILLEGAL") {
+              contraband.push(entry);
+            } else if (item.type === "LEGAL") {
+              legal.push(entry);
+            }
+          });
+
+          return (
+            <div
+              key={p.id}
+              // CHANGED: Reduced width to 320px (standard card size)
+              className={`flex flex-col w-[320px] shrink-0 bg-zinc-800 rounded-xl border snap-center ${
+                i === 0
+                  ? "border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]"
+                  : "border-zinc-700"
+              } overflow-hidden`}
+            >
+              {/* Player Header */}
+              <div className="p-3 bg-black/20 w-full flex flex-row justify-between items-center border-b border-zinc-700">
+                <div>
+                  <div className="font-bold text-md text-white">{p.name}</div>
+                  <div className="text-[10px] text-zinc-500">
+                    {ROLES[p.role]?.name || "Smuggler"}
+                  </div>
+                </div>
+                {i === 0 && (
+                  <div className="flex items-center gap-1 text-yellow-500 text-[10px] font-bold uppercase tracking-wider bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/20">
+                    <Crown size={10} /> Winner
+                  </div>
+                )}
+              </div>
+
+              {/* Exports Section - CHANGED: Removed Grid, now just Flex Column */}
+              <div className="flex-1 p-3 flex flex-col gap-4">
+                {/* Section 1: Exports Inventory */}
+                <div className="space-y-3 flex-1">
+                  <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-700 pb-1">
+                    Exports Manifest
+                  </h4>
+
+                  {/* Legal Goods */}
+                  {legal.length > 0 && (
+                    <div>
+                      <span className="text-[9px] text-emerald-500 font-bold uppercase mb-1 block">
+                        Legal Goods
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {legal.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-1 bg-emerald-900/20 px-1.5 py-0.5 rounded border border-emerald-500/20 text-[10px] text-emerald-100"
+                          >
+                            <item.icon size={10} /> {item.name}{" "}
+                            <span className="font-mono opacity-60">
+                              x{item.qty}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Royal Goods */}
+                  {royal.length > 0 && (
+                    <div>
+                      <span className="text-[9px] text-yellow-500 font-bold uppercase mb-1 block">
+                        Royal Goods
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {royal.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-1 bg-yellow-900/20 px-1.5 py-0.5 rounded border border-yellow-500/20 text-[10px] text-yellow-100"
+                          >
+                            <item.icon size={10} /> {item.name}{" "}
+                            <span className="font-mono opacity-60">
+                              x{item.qty}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contraband */}
+                  {contraband.length > 0 && (
+                    <div>
+                      <span className="text-[9px] text-red-500 font-bold uppercase mb-1 block">
+                        Contraband
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {contraband.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-1 bg-red-900/20 px-1.5 py-0.5 rounded border border-red-500/20 text-[10px] text-red-100"
+                          >
+                            <item.icon size={10} /> {item.name}{" "}
+                            <span className="font-mono opacity-60">
+                              x{item.qty}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {legal.length === 0 &&
+                    royal.length === 0 &&
+                    contraband.length === 0 && (
+                      <div className="text-zinc-600 italic text-xs">
+                        No goods exported.
+                      </div>
+                    )}
+                </div>
+
+                {/* Section 2: King/Queen Bonuses */}
+                <div className="bg-black/20 -mx-3 -mb-3 p-3 border-t border-zinc-700 mt-auto">
+                  <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">
+                    Titles & Honors
+                  </h4>
+                  {p.kqDetails && p.kqDetails.length > 0 ? (
+                    <div className="space-y-1 mb-3">
+                      {p.kqDetails.map((detail, idx) => {
+                        const isKing = detail.includes("King");
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex items-center gap-2 p-1.5 rounded ${isKing ? "bg-yellow-500/10" : "bg-zinc-800"}`}
+                          >
+                            {isKing ? (
+                              <Crown size={12} className="text-yellow-500" />
+                            ) : (
+                              <User size={12} className="text-zinc-400" />
+                            )}
+                            <span
+                              className={`text-[10px] font-bold ${isKing ? "text-yellow-200" : "text-zinc-300"}`}
+                            >
+                              {detail}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-zinc-600 italic text-[10px] mb-3">
+                      No titles awarded.
+                    </div>
+                  )}
+
+                  {/* Total Bonus Cash Display */}
+                  <div className="flex justify-between items-center border-t border-zinc-700 pt-2">
+                    <span className="text-[10px] text-zinc-500 uppercase">
+                      Bonus Payout
+                    </span>
+                    <span
+                      className={`font-mono font-bold ${p.kqIncome > 0 ? "text-yellow-400 text-sm" : "text-zinc-600 text-xs"}`}
+                    >
+                      +${p.kqIncome}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const renderTable = (data, isFinalView) => {
     let displayData = [];
@@ -450,6 +775,10 @@ const ReportCard = ({ players, roundData, isFinal }) => {
 
         let totalMarketSpend = 0;
         let marketBreakdown = [];
+
+        // King/Queen Data
+        const kqIncome = p.kqIncome || 0;
+        const kqDetails = p.kqDetails || [];
 
         const stash = p.stash || [];
 
@@ -488,7 +817,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
               });
             }
 
-            // 4. Inspection Impact (Scanning transactions)
+            // 4. Inspection Impact
             const inspectionLabels = [
               "Fine Paid",
               "Fine Collected",
@@ -506,7 +835,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                 if (inspectionLabels.includes(t.label)) {
                   totalInspectionNet += t.amount;
                   if (Math.abs(t.amount) > 0) {
-                    // Shorten labels for UI fit
                     let label = t.label;
                     if (label === "Fine Paid") label = "Fined";
                     if (label === "Fine Collected") label = "Fine Coll.";
@@ -514,7 +842,9 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                     if (label === "Wrongful Search") label = "Clean";
 
                     inspectionBreakdown.push(
-                      `R${i + 1}: ${label} (${t.amount > 0 ? "+" : ""}${t.amount})`,
+                      `R${i + 1}: ${label} (${t.amount > 0 ? "+" : ""}${
+                        t.amount
+                      })`,
                     );
                   }
                 }
@@ -523,7 +853,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           }
         });
 
-        const total = Math.floor(p.coins + stashBonus - BANK_LOAN);
+        const total = Math.floor(p.coins + stashBonus - BANK_LOAN + kqIncome);
         const stashTotal = stash.reduce(
           (acc, c) => acc + (GOODS[c]?.val || 0),
           0,
@@ -548,6 +878,9 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           marketCost: totalMarketSpend,
           marketDetails: marketBreakdown,
 
+          kqIncome: kqIncome,
+          kqDetails: kqDetails,
+
           loan: -BANK_LOAN,
           total,
           isWinner: false,
@@ -557,7 +890,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
       displayData.sort((a, b) => b.total - a.total);
       if (displayData.length > 0) displayData[0].isWinner = true;
     } else {
-      // ... (Existing Round View Logic - Unchanged) ...
+      // Existing Round View Logic
       const roundIdx =
         typeof activeTab === "string"
           ? parseInt(activeTab.split(" ")[1]) - 1
@@ -565,7 +898,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
 
       const roundEntry = Array.isArray(roundData)
         ? roundData[
-            activeTab === "FINAL"
+            activeTab === "FINAL" || activeTab === "STASH"
               ? 0
               : typeof activeTab === "number"
                 ? activeTab
@@ -616,7 +949,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-emerald-300">
                     Stash
                   </th>
-                  {/* --- NEW COLUMNS --- */}
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-purple-400">
                     Insp. Impact
                   </th>
@@ -629,7 +961,9 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-blue-400">
                     Event Impact
                   </th>
-                  {/* ------------------- */}
+                  <th className="px-6 py-3 border-b border-zinc-800 text-right text-yellow-200">
+                    King/Queen
+                  </th>
                   <th className="px-6 py-3 border-b border-zinc-800 text-right text-red-400">
                     Loan
                   </th>
@@ -671,18 +1005,12 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                     <td className="px-6 py-4 align-top">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`flex items-center justify-center w-6 h-6 rounded-full font-bold text-[10px] ${
-                            d.isWinner
-                              ? "bg-yellow-500 text-black"
-                              : "bg-zinc-800 text-zinc-500"
-                          }`}
+                          className={`flex items-center justify-center w-6 h-6 rounded-full font-bold text-[10px] ${d.isWinner ? "bg-yellow-500 text-black" : "bg-zinc-800 text-zinc-500"}`}
                         >
                           {i + 1}
                         </div>
                         <span
-                          className={`font-medium ${
-                            d.isWinner ? "text-white" : "text-zinc-400"
-                          }`}
+                          className={`font-medium ${d.isWinner ? "text-white" : "text-zinc-400"}`}
                         >
                           {d.name}
                         </span>
@@ -697,18 +1025,10 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                     <td className="px-6 py-4 text-right font-mono text-emerald-300 align-top">
                       ${d.stashVal}
                     </td>
-
-                    {/* Inspection Impact - With Details */}
                     <td className="px-6 py-4 text-right align-top">
                       <div className="flex flex-col items-end">
                         <span
-                          className={`font-mono ${
-                            d.inspectionNet > 0
-                              ? "text-purple-400"
-                              : d.inspectionNet < 0
-                                ? "text-red-400"
-                                : "text-zinc-600"
-                          }`}
+                          className={`font-mono ${d.inspectionNet > 0 ? "text-purple-400" : d.inspectionNet < 0 ? "text-red-400" : "text-zinc-600"}`}
                         >
                           {d.inspectionNet > 0 ? "+" : ""}
                           {d.inspectionNet}
@@ -723,8 +1043,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         ))}
                       </div>
                     </td>
-
-                    {/* Black Market - With Details */}
                     <td className="px-6 py-4 text-right align-top">
                       <div className="flex flex-col items-end">
                         <span
@@ -742,8 +1060,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         ))}
                       </div>
                     </td>
-
-                    {/* Role Bonuses */}
                     <td className="px-6 py-4 text-right align-top">
                       <div className="flex flex-col items-end">
                         <span className="font-mono text-yellow-400">
@@ -759,18 +1075,10 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         ))}
                       </div>
                     </td>
-
-                    {/* Event Impact */}
                     <td className="px-6 py-4 text-right align-top">
                       <div className="flex flex-col items-end">
                         <span
-                          className={`font-mono ${
-                            d.eventBonus > 0
-                              ? "text-blue-400"
-                              : d.eventBonus < 0
-                                ? "text-red-400"
-                                : "text-zinc-600"
-                          }`}
+                          className={`font-mono ${d.eventBonus > 0 ? "text-blue-400" : d.eventBonus < 0 ? "text-red-400" : "text-zinc-600"}`}
                         >
                           {d.eventBonus > 0 ? "+" : ""}
                           {d.eventBonus}
@@ -785,7 +1093,24 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         ))}
                       </div>
                     </td>
-
+                    <td className="px-6 py-4 text-right align-top">
+                      <div className="flex flex-col items-end">
+                        <span
+                          className={`font-mono ${d.kqIncome > 0 ? "text-yellow-200" : "text-zinc-600"}`}
+                        >
+                          {d.kqIncome > 0 ? "+" : ""}
+                          {d.kqIncome}
+                        </span>
+                        {d.kqDetails.map((det, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[9px] text-zinc-500 whitespace-nowrap"
+                          >
+                            {det}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-right font-mono text-red-400 align-top">
                       {d.loan}
                     </td>
@@ -795,7 +1120,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                   </tr>
                 );
               } else {
-                // ... (Round View Row - Unchanged) ...
                 return (
                   <tr key={d.id} className="group hover:bg-zinc-800/30">
                     <td className="px-6 py-4 align-top">
@@ -814,7 +1138,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         {d.isInspector ? "Inspector" : ROLES[d.role]?.name}
                       </div>
                     </td>
-
                     <td className="px-6 py-4 align-top">
                       {d.activeEvent && (
                         <div className="text-xs text-zinc-400 mb-1">
@@ -825,19 +1148,15 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                       )}
                       {d.eventImpact !== 0 ? (
                         <span
-                          className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded ${
-                            d.eventImpact > 0
-                              ? "text-emerald-400 bg-emerald-900/20"
-                              : "text-red-400 bg-red-900/20"
-                          }`}
+                          className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded ${d.eventImpact > 0 ? "text-emerald-400 bg-emerald-900/20" : "text-red-400 bg-red-900/20"}`}
                         >
-                          {d.eventImpact > 0 ? "+" : ""}${d.eventImpact}
+                          {d.eventImpact > 0 ? "+" : ""}
+                          {d.eventImpact}
                         </span>
                       ) : (
                         <span className="text-zinc-600 text-xs">-</span>
                       )}
                     </td>
-
                     <td className="px-6 py-4 align-top">
                       {d.marketItems.length > 0 ? (
                         <div className="flex flex-col gap-1">
@@ -860,7 +1179,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         <span className="text-zinc-600 italic text-xs">-</span>
                       )}
                     </td>
-
                     <td className="px-6 py-4 align-top">
                       {d.roleBonus > 0 ? (
                         <span className="text-yellow-400 font-mono text-xs">
@@ -870,7 +1188,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         <span className="text-zinc-600 text-xs">-</span>
                       )}
                     </td>
-
                     <td className="px-6 py-4 align-top">
                       <div className="space-y-2">
                         {d.transactions.length === 0 ? (
@@ -888,11 +1205,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                                   {t.label}
                                 </span>
                                 <span
-                                  className={`font-mono ${
-                                    t.amount >= 0
-                                      ? "text-emerald-400"
-                                      : "text-red-400"
-                                  }`}
+                                  className={`font-mono ${t.amount >= 0 ? "text-emerald-400" : "text-red-400"}`}
                                 >
                                   {t.amount >= 0 ? "+" : ""}
                                   {t.amount}
@@ -975,7 +1288,10 @@ const ReportCard = ({ players, roundData, isFinal }) => {
         </div>
       )}
 
-      {renderTable(roundData, isFinal && activeTab === "FINAL")}
+      {/* Conditionally Render Stash View or Table */}
+      {isFinal && activeTab === "STASH"
+        ? renderStashView()
+        : renderTable(roundData, isFinal && activeTab === "FINAL")}
     </div>
   );
 };
@@ -1036,8 +1352,11 @@ const Card = ({ typeId, small, selected, onClick, faceDown }) => {
   const info = GOODS[typeId];
   if (!info) return null;
   const Icon = info.icon;
+
   const isIllegal = info.type === "ILLEGAL";
   const isTrap = info.type === "TRAP";
+  // New check for Royal Goods
+  const isRoyal = typeId.startsWith("ROYAL_");
 
   if (faceDown) {
     return (
@@ -1066,11 +1385,14 @@ const Card = ({ typeId, small, selected, onClick, faceDown }) => {
             : "hover:-translate-y-1"
         }
         ${
+          // Priority Order: Trap -> Royal -> Illegal -> Legal
           isTrap
             ? "bg-orange-950/50 border-orange-600/50"
-            : isIllegal
-              ? "bg-red-950/30 border-red-900/50"
-              : "bg-emerald-950/30 border-emerald-900/50"
+            : isRoyal
+              ? "bg-purple-950/50 border-purple-500/50" // Purple for Royal Goods
+              : isIllegal
+                ? "bg-red-950/30 border-red-900/50"
+                : "bg-emerald-950/30 border-emerald-900/50"
         }
         ${small ? "w-12 h-16 p-1" : "w-24 h-36 md:w-32 md:h-44 p-2 md:p-3"}
         ${onClick ? "cursor-pointer" : ""}
@@ -1082,7 +1404,7 @@ const Card = ({ typeId, small, selected, onClick, faceDown }) => {
             small ? "text-[8px]" : "text-xs"
           } text-zinc-500`}
         >
-          {isTrap ? "TRAP" : isIllegal ? "!!" : "OK"}
+          {isTrap ? "TRAP" : isRoyal ? "ROYAL" : isIllegal ? "!!" : "OK"}
         </span>
         <Icon size={small ? 10 : 16} className={info.color} />
       </div>
@@ -1114,6 +1436,64 @@ const Card = ({ typeId, small, selected, onClick, faceDown }) => {
       )}
     </div>
   );
+};
+
+const calculateKingQueenBonuses = (players) => {
+  const legalTypes = ["MEDS", "FOOD", "PARTS", "TEXTILE"];
+  const bonuses = {}; // { playerId: { income: 0, details: [] } }
+
+  players.forEach((p) => {
+    bonuses[p.id] = { income: 0, details: [] };
+  });
+
+  legalTypes.forEach((type) => {
+    // 1. Count quantities for this type per player
+    const counts = players.map((p) => {
+      let count = 0;
+      p.stash.forEach((itemId) => {
+        const item = GOODS[itemId];
+        if (item.id === type) count += 1; // Standard Legal
+        if (item.legalType === type) count += item.legalCount || 0; // Royal Good
+      });
+      return { id: p.id, count, name: p.name };
+    });
+
+    // 2. Sort by count descending
+    counts.sort((a, b) => b.count - a.count);
+
+    // 3. Determine King (1st) and Queen (2nd)
+    const kingCount = counts[0].count;
+    if (kingCount === 0) return; // No one collected this
+
+    const kings = counts.filter((c) => c.count === kingCount);
+    const queens = counts.filter((c) => c.count < kingCount && c.count > 0);
+
+    // Determine Queen Count (highest remaining)
+    const queenCount = queens.length > 0 ? queens[0].count : 0;
+    const actualQueens = queens.filter((c) => c.count === queenCount);
+
+    const kBonusVal = GOODS[type].kingBonus;
+    const qBonusVal = GOODS[type].queenBonus;
+
+    // Apply King Bonus
+    kings.forEach((k) => {
+      bonuses[k.id].income += kBonusVal;
+      bonuses[k.id].details.push(`King of ${GOODS[type].name} (+${kBonusVal})`);
+    });
+
+    // Apply Queen Bonus (Only if no tie for King took all the glory?
+    // Rule variation: Usually if tie for King, no Queen awarded. We will follow that.)
+    if (kings.length === 1 && actualQueens.length > 0) {
+      actualQueens.forEach((q) => {
+        bonuses[q.id].income += qBonusVal;
+        bonuses[q.id].details.push(
+          `Queen of ${GOODS[type].name} (+${qBonusVal})`,
+        );
+      });
+    }
+  });
+
+  return bonuses;
 };
 
 const LeaveConfirmModal = ({ onConfirm, onCancel, isHost, onLobby }) => (
@@ -1625,7 +2005,8 @@ export default function ContrabandGame() {
     ? EVENTS[gameState.marketEvent.id]
     : EVENTS.NORMAL;
 
-  const totalRounds = gameState?.players.length || 0;
+  const totalRounds =
+    gameState?.inspectorOrder?.length || gameState?.players.length || 0;
 
   useEffect(() => {
     if (me.loadedCrate && me.loadedCrate.bribe !== undefined) {
@@ -1655,6 +2036,7 @@ export default function ContrabandGame() {
     const initialData = {
       roomId: newRoomId,
       hostId: user.uid,
+      gameLength: "SHORT", // Default
       status: "lobby",
       players: [
         {
@@ -1820,7 +2202,14 @@ export default function ContrabandGame() {
   const startGame = async () => {
     if (gameState.players.length < 3) return setError("Need 3+ Players.");
     const deck = shuffle(generateDeck(gameState.players.length));
-    const inspectorOrder = shuffle(gameState.players.map((_, i) => i));
+
+    // HANDLE GAME LENGTH
+    let inspectorOrder = gameState.players.map((_, i) => i);
+    if (gameState.gameLength === "LONG") {
+      // Double the order: [0, 1, 2, 0, 1, 2]
+      inspectorOrder = [...inspectorOrder, ...inspectorOrder];
+    }
+    inspectorOrder = shuffle(inspectorOrder); // Shuffle who goes when
 
     const firstInspectorIdx = inspectorOrder[0]; // Get the index
     const firstInspectorId = gameState.players[firstInspectorIdx].id;
@@ -2487,20 +2876,39 @@ export default function ContrabandGame() {
   const startNextRound = async () => {
     const nextRound = gameState.currentRound + 1;
 
-    // ... [Previous Game Over Logic stays the same] ...
+    // --- SCENARIO A: GAME OVER ---
     if (nextRound > totalRounds) {
-      // ... copy existing Game Over logic here ...
-      // (Snippet omitted for brevity, keep existing code)
+      // 1. CALCULATE BONUSES HERE
+      const kqBonuses = calculateKingQueenBonuses(gameState.players);
+
+      // 2. APPLY BONUSES TO PLAYERS
       const finalScores = gameState.players
         .map((p) => {
+          const bonusData = kqBonuses[p.id];
+          // Add Cash + Stash + Bonus - Loan
+          // Note: We don't add Stash Value to 'coins' here, just calculate final score.
+          // The UI adds coins + stash + bonus separately.
+          // However, for the 'winner' logic, we need the total.
+
+          const stashTotal = p.stash.reduce(
+            (acc, c) => acc + (GOODS[c]?.val || 0),
+            0,
+          );
+          const finalTotal = Math.floor(
+            p.coins + stashTotal - BANK_LOAN + bonusData.income,
+          );
+
           return {
             ...p,
-            finalScore: Math.floor(p.coins - BANK_LOAN),
+            finalScore: finalTotal, // Used for sorting winner
+            kqDetails: bonusData.details, // IMPORTANT: Save details for UI
+            kqIncome: bonusData.income, // IMPORTANT: Save income for UI
             ready: false,
           };
         })
         .sort((a, b) => b.finalScore - a.finalScore);
 
+      // 3. SAVE TO DB
       await updateDoc(
         doc(db, "artifacts", APP_ID, "public", "data", "rooms", roomId),
         {
@@ -2532,7 +2940,7 @@ export default function ContrabandGame() {
     // Assign Roles & Hands
     let playersWithRoles = assignRandomRoles(gameState.players);
 
-    // --- CHANGE: Force Inspector role to null ---
+    // Force Inspector role to null
     playersWithRoles[nextInspectorIndex].role = null;
 
     const nextInspectorId = playersWithRoles[nextInspectorIndex].id;
@@ -2571,7 +2979,7 @@ export default function ContrabandGame() {
         roundHistory: arrayUnion({
           stats: gameState.currentRoundStats,
           event: gameState.marketEvent || EVENTS.NORMAL,
-        }), // Ensure history is saved
+        }),
         turnState: "SHOPPING",
         marketEvent: nextEvent,
         logs: arrayUnion({
@@ -2591,13 +2999,22 @@ export default function ContrabandGame() {
     const nextRound = gameState.currentRound + 1;
 
     // --- SCENARIO A: GAME OVER ---
-    if (nextRound > totalRounds) {
-      // Calculate Final Scores immediately
+    if (nextRound > inspectorOrder.length) {
+      // Use inspectorOrder.length instead of players.length
+
+      // CALCULATE KING/QUEEN BONUSES
+      const kqBonuses = calculateKingQueenBonuses(players);
+
       const finalScores = players
         .map((p) => {
+          const bonusData = kqBonuses[p.id];
+          const finalCash = Math.floor(p.coins - BANK_LOAN + bonusData.income);
+
           return {
             ...p,
-            finalScore: Math.floor(p.coins - BANK_LOAN),
+            finalScore: finalCash,
+            kqDetails: bonusData.details, // Save for display
+            kqIncome: bonusData.income,
             ready: false,
           };
         })
@@ -2908,6 +3325,55 @@ export default function ContrabandGame() {
                 </div>
               </div>
             ))}
+          </div>
+          {gameState.hostId === user.uid && (
+            <div className="flex justify-center mb-4">
+              <div className="bg-zinc-800 p-1 rounded-lg flex items-center">
+                <button
+                  onClick={() =>
+                    updateDoc(
+                      doc(
+                        db,
+                        "artifacts",
+                        APP_ID,
+                        "public",
+                        "data",
+                        "rooms",
+                        roomId,
+                      ),
+                      { gameLength: "SHORT" },
+                    )
+                  }
+                  className={`px-4 py-2 rounded text-xs font-bold transition-all ${gameState.gameLength === "SHORT" ? "bg-emerald-600 text-white" : "text-zinc-500 hover:text-zinc-300"}`}
+                >
+                  SHORT (1x)
+                </button>
+                <button
+                  onClick={() =>
+                    updateDoc(
+                      doc(
+                        db,
+                        "artifacts",
+                        APP_ID,
+                        "public",
+                        "data",
+                        "rooms",
+                        roomId,
+                      ),
+                      { gameLength: "LONG" },
+                    )
+                  }
+                  className={`px-4 py-2 rounded text-xs font-bold transition-all ${gameState.gameLength === "LONG" ? "bg-emerald-600 text-white" : "text-zinc-500 hover:text-zinc-300"}`}
+                >
+                  LONG (2x)
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Show Length to everyone */}
+          <div className="text-center text-xs text-zinc-500 mb-4 uppercase tracking-widest">
+            Game Length: {gameState.gameLength || "SHORT"}
           </div>
           {gameState.hostId === user.uid && (
             <button
@@ -3414,7 +3880,7 @@ export default function ContrabandGame() {
                           Declare As
                         </label>
                         <div className="grid grid-cols-3 gap-1">
-                          {["MEDS", "FOOD", "PARTS"].map((type) => (
+                          {["MEDS", "FOOD", "PARTS", "TEXTILE"].map((type) => (
                             <button
                               key={type}
                               onClick={() => setDeclaredType(type)}
@@ -3659,4 +4125,4 @@ export default function ContrabandGame() {
 
   return null;
 }
-//major update. card values changed. updated events. updated report with event bonus.
+//major update. new cards. card values changed. updated events. updated report with event bonus.
