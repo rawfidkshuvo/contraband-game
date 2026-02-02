@@ -3205,6 +3205,7 @@ export default function ContrabandGame() {
   if (isMaintenance) {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center text-white p-4 text-center">
+        <ContrabandLogoBig />
         <div className="bg-orange-500/10 p-8 rounded-2xl border border-orange-500/30">
           <Hammer
             size={64}
@@ -3229,6 +3230,7 @@ export default function ContrabandGame() {
             </div>
           </div>
         </a>
+        <ContrabandLogo />
       </div>
     );
   }
