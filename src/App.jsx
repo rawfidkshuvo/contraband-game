@@ -876,7 +876,7 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           }
         });
 
-        const total = Math.floor(p.coins + stashBonus - BANK_LOAN + kqIncome);
+        const total = Math.floor(p.coins + stashTotal - BANK_LOAN + kqIncome);
         const stashTotal = stash.reduce(
           (acc, c) => acc + (GOODS[c]?.val || 0),
           0,
@@ -3098,11 +3098,20 @@ export default function ContrabandGame() {
       const finalScores = players
         .map((p) => {
           const bonusData = kqBonuses[p.id];
-          const finalCash = Math.floor(p.coins - BANK_LOAN + bonusData.income);
+          // 1. CALCULATE STASH VALUE
+          const stashTotal = p.stash.reduce(
+            (acc, c) => acc + (GOODS[c]?.val || 0),
+            0
+          );
+
+          // 2. ADD STASH TO FINAL TOTAL
+          const finalTotal = Math.floor(
+            p.coins + stashTotal - BANK_LOAN + bonusData.income
+          );
 
           return {
             ...p,
-            finalScore: finalCash,
+            finalScore: finalTotal,
             kqDetails: bonusData.details, // Save for display
             kqIncome: bonusData.income,
             ready: false,
