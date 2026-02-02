@@ -144,8 +144,8 @@ const EVENTS = {
       "FOOD",
       "ROYAL_2_FOOD",
       "ROYAL_3_FOOD",
-      "ROYAL_2_MED",
-      "ROYAL_3_MED",
+      "ROYAL_2_MEDS",
+      "ROYAL_3_MEDS",
     ], // Now an Array
   },
   CRACKDOWN: {
@@ -389,29 +389,33 @@ const ContrabandLogoBig = () => (
   </div>
 );
 
-// Deck Template - Scaled for Player Count
-const generateDeck = (playerCount) => {
+// Deck Template - Scaled for Player Count AND Game Length
+const generateDeck = (playerCount, gameLength = "SHORT") => {
   let deck = [];
+
+  // CHANGE: Apply multiplier only if game is LONG *AND* there are more than 4 players
+  const multiplier = gameLength === "LONG" && playerCount > 4 ? 1.5 : 1;
 
   // Base counts per player (Balanced for game length)
   const counts = {
-    MEDS: 9 * playerCount,
-    FOOD: 7 * playerCount,
-    PARTS: 7 * playerCount,
-    TEXTILE: 5 * playerCount,
+    MEDS: 8 * playerCount * multiplier,
+    FOOD: 6 * playerCount * multiplier,
+    PARTS: 6 * playerCount * multiplier,
+    TEXTILE: 4 * playerCount * multiplier,
 
-    CHIP: 4 * playerCount,
-    WEAPON: 4 * playerCount,
-    NARCO: 2 * playerCount,
-    SPICE: 1 * playerCount,
+    CHIP: 4 * playerCount * multiplier,
+    WEAPON: 4 * playerCount * multiplier,
+    NARCO: 2 * playerCount * multiplier,
+    SPICE: 2 * playerCount * multiplier,
 
-    ROYAL_2_MEDS: 2,
-    ROYAL_2_FOOD: 2,
-    ROYAL_2_TEXTILE: 2,
-    ROYAL_2_PARTS: 2,
-    ROYAL_3_MEDS: 1,
-    ROYAL_3_FOOD: 2,
-    ROYAL_3_TEXTILE: 1,
+    // Royal Goods
+    ROYAL_2_MEDS: 2 * multiplier,
+    ROYAL_2_FOOD: 2 * multiplier,
+    ROYAL_2_TEXTILE: 2 * multiplier,
+    ROYAL_2_PARTS: 2 * multiplier,
+    ROYAL_3_MEDS: 2 * multiplier,
+    ROYAL_3_FOOD: 2 * multiplier,
+    ROYAL_3_TEXTILE: 2 * multiplier,
   };
 
   // Add standard cards
@@ -419,8 +423,8 @@ const generateDeck = (playerCount) => {
     for (let i = 0; i < count; i++) deck.push(type);
   });
 
-  // Add exactly 1 Trap per player
-  for (let i = 0; i < playerCount; i++) deck.push("TRAP");
+  // Add Traps (1 per player * multiplier)
+  for (let i = 0; i < playerCount * multiplier; i++) deck.push("TRAP");
 
   return deck;
 };
@@ -2292,7 +2296,9 @@ export default function ContrabandGame() {
 
   const startGame = async () => {
     if (gameState.players.length < 3) return setError("Need 3+ Players.");
-    const deck = shuffle(generateDeck(gameState.players.length));
+    const deck = shuffle(
+      generateDeck(gameState.players.length, gameState.gameLength),
+    );
 
     // HANDLE GAME LENGTH
     let inspectorOrder = gameState.players.map((_, i) => i);
