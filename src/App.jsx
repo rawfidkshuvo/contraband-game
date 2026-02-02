@@ -3685,8 +3685,8 @@ export default function ContrabandGame() {
                   key={p.id}
                   className={`relative bg-zinc-900/90 p-3 rounded-xl border-2 w-32 transition-all flex flex-col items-center ${
                     isInsp
-                      ? "border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)]"
-                      : "border-zinc-700"
+                      ? "border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.3)]"
+                      : "border-zinc-700 shadow-[0_0_16px_rgba(34,197,94,0.3)]"
                   } ${p.loadedCrate ? "bg-zinc-800" : ""}`}
                 >
                   {/* Top Right Icon */}
@@ -3702,13 +3702,13 @@ export default function ContrabandGame() {
                     {/* User icon */}
                     <User
                       size={24}
-                      className={isInsp ? "text-yellow-500" : "text-zinc-600"}
+                      className={isInsp ? "text-red-500" : "text-zinc-600"}
                     />
 
                     {/* Name */}
                     <span
                       className={`font-bold text-xs truncate w-full text-center mt-1 ${
-                        isInsp ? "text-yellow-200" : "text-zinc-400"
+                        isInsp ? "text-red-200" : "text-zinc-400"
                       }`}
                     >
                       {p.name}
@@ -4005,7 +4005,7 @@ export default function ContrabandGame() {
                         <label className="text-[10px] text-zinc-500 uppercase font-bold mb-1 block">
                           Declare As
                         </label>
-                        <div className="grid grid-cols-3 gap-1">
+                        <div className="grid grid-cols-4 gap-1">
                           {["MEDS", "FOOD", "PARTS", "TEXTILE"].map((type) => (
                             <button
                               key={type}
