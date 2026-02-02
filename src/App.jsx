@@ -139,7 +139,14 @@ const EVENTS = {
     name: "Pandemic",
     desc: "Meds & Rations value x2.", // Updated Description
     multiplier: 2,
-    target: ["MEDS", "FOOD", "ROYAL_FOOD_2", "ROYAL_FOOD_3", "ROYAL_MED_2", "ROYAL_MED_3"], // Now an Array
+    target: [
+      "MEDS",
+      "FOOD",
+      "ROYAL_FOOD_2",
+      "ROYAL_FOOD_3",
+      "ROYAL_MED_2",
+      "ROYAL_MED_3",
+    ], // Now an Array
   },
   CRACKDOWN: {
     id: "CRACKDOWN",
@@ -1346,6 +1353,71 @@ const StashModal = ({ stash, onClose }) => (
   </div>
 );
 
+const OpponentStashModal = ({ player, onClose }) => {
+  if (!player) return null;
+  const stash = player.stash || [];
+
+  // Calculate stats for the header
+  const legalCount = stash.filter((id) => GOODS[id]?.type === "LEGAL").length;
+  const unknownCount = stash.length - legalCount;
+
+  return (
+    <div className="fixed inset-0 bg-black/90 z-160 flex items-center justify-center p-4 animate-in fade-in">
+      <div className="bg-zinc-900 rounded-xl border border-zinc-700 p-6 max-w-lg w-full shadow-2xl flex flex-col max-h-[80vh]">
+        <div className="flex justify-between items-center mb-4 border-b border-zinc-800 pb-2">
+          <div>
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <User size={20} className="text-zinc-400" />
+              {player.name}'s Cargo
+            </h3>
+            <div className="text-xs text-zinc-500 mt-1">
+              Visible:{" "}
+              <span className="text-emerald-400">{legalCount} Legal</span> •
+              Suspicious:{" "}
+              <span className="text-red-400">{unknownCount} Unknown</span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-zinc-800 rounded text-zinc-400"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {stash.length === 0 ? (
+            <div className="text-center text-zinc-500 py-12 italic border-2 border-dashed border-zinc-800 rounded-xl">
+              Cargo Hold Empty
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+              {stash.map((cId, i) => {
+                const info = GOODS[cId];
+                // Logic: Only show face if strictly LEGAL.
+                // Traps, Royal Goods, and Contraband are hidden.
+                const isVisible = info && info.type === "LEGAL";
+
+                return (
+                  <div key={i} className="flex justify-center">
+                    <Card typeId={cId} small={true} faceDown={!isVisible} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-zinc-800 text-center">
+          <div className="text-xs text-zinc-600 uppercase tracking-widest">
+            Official Public Record
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Card = ({ typeId, small, selected, onClick, faceDown }) => {
   const info = GOODS[typeId];
   if (!info) return null;
@@ -1908,6 +1980,8 @@ export default function ContrabandGame() {
   const [showLogs, setShowLogs] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showStash, setShowStash] = useState(false);
+  // ... inside ContrabandGame component
+  const [opponentStashId, setOpponentStashId] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
   // Interaction States
@@ -3433,6 +3507,12 @@ export default function ContrabandGame() {
             onClose={() => setShowStash(false)}
           />
         )}
+        {opponentStashId && (
+          <OpponentStashModal
+            player={gameState.players.find((p) => p.id === opponentStashId)}
+            onClose={() => setOpponentStashId(null)}
+          />
+        )}
         <ShopModal
           isOpen={showShop}
           onClose={() => setShowShop(false)}
@@ -3593,6 +3673,14 @@ export default function ContrabandGame() {
                     >
                       {p.name}
                     </span>
+                    <button
+                      onClick={() => setOpponentStashId(p.id)}
+                      className="mt-auto pt-2 w-full"
+                    >
+                      <div className="w-full py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 rounded text-[10px] text-zinc-400 hover:text-white transition-colors flex items-center justify-center gap-1 uppercase font-bold tracking-wider">
+                        <Briefcase size={10} /> View Stash
+                      </div>
+                    </button>
                   </div>
 
                   {/* --- NEW CODE STARTS HERE --- */}
