@@ -65,6 +65,7 @@ import {
   Loader,
   Shirt,
   Flame,
+  ChessKing,
 } from "lucide-react";
 
 // --- Firebase Config ---
@@ -131,14 +132,14 @@ const EVENTS = {
     name: "War Zone",
     desc: "Weapons & Machinery value x2.", // Updated Description
     multiplier: 2,
-    target: ["WEAPON", "PARTS"], // Now an Array
+    target: ["WEAPON", "PARTS", "ROYAL_PARTS"], // Now an Array
   },
   PANDEMIC: {
     id: "PANDEMIC",
     name: "Pandemic",
     desc: "Meds & Rations value x2.", // Updated Description
     multiplier: 2,
-    target: ["MEDS", "FOOD"], // Now an Array
+    target: ["MEDS", "FOOD", "ROYAL_FOOD_2", "ROYAL_FOOD_3", "ROYAL_MED_2", "ROYAL_MED_3"], // Now an Array
   },
   CRACKDOWN: {
     id: "CRACKDOWN",
@@ -280,7 +281,7 @@ const GOODS = {
     penalty: 300,
     type: "ILLEGAL",
     icon: Utensils,
-    color: "text-yellow-200",
+    color: "text-cyan-500",
     legalType: "FOOD",
     legalCount: 2,
   },
@@ -291,7 +292,7 @@ const GOODS = {
     penalty: 400,
     type: "ILLEGAL",
     icon: Cross,
-    color: "text-yellow-300",
+    color: "text-cyan-500",
     legalType: "MEDS", // Counts as Meds
     legalCount: 2, // Counts as 3 Meds
   },
@@ -302,7 +303,7 @@ const GOODS = {
     penalty: 400,
     type: "ILLEGAL",
     icon: Shirt,
-    color: "text-yellow-400",
+    color: "text-cyan-500",
     legalType: "TEXTILE",
     legalCount: 2,
   },
@@ -313,7 +314,7 @@ const GOODS = {
     penalty: 400,
     type: "ILLEGAL",
     icon: Utensils,
-    color: "text-yellow-200",
+    color: "text-yellow-500",
     legalType: "FOOD",
     legalCount: 3,
   },
@@ -324,7 +325,7 @@ const GOODS = {
     penalty: 400,
     type: "ILLEGAL",
     icon: Cross,
-    color: "text-yellow-300",
+    color: "text-yellow-500",
     legalType: "MEDS", // Counts as Meds
     legalCount: 3, // Counts as 3 Meds
   },
@@ -335,7 +336,7 @@ const GOODS = {
     penalty: 400,
     type: "ILLEGAL",
     icon: Shirt,
-    color: "text-yellow-400",
+    color: "text-yellow-500",
     legalType: "TEXTILE",
     legalCount: 3,
   },
@@ -346,7 +347,7 @@ const GOODS = {
     penalty: 400,
     type: "ILLEGAL",
     icon: Hammer,
-    color: "text-yellow-500",
+    color: "text-cyan-500",
     legalType: "PARTS",
     legalCount: 2,
   },
@@ -388,10 +389,10 @@ const generateDeck = (playerCount) => {
 
   // Base counts per player (Balanced for game length)
   const counts = {
-    MEDS: 8 * playerCount,
-    FOOD: 6 * playerCount,
-    PARTS: 6 * playerCount,
-    TEXTILE: 4 * playerCount,
+    MEDS: 9 * playerCount,
+    FOOD: 7 * playerCount,
+    PARTS: 7 * playerCount,
+    TEXTILE: 5 * playerCount,
 
     CHIP: 4 * playerCount,
     WEAPON: 4 * playerCount,
@@ -608,9 +609,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
               <div className="p-3 bg-black/20 w-full flex flex-row justify-between items-center border-b border-zinc-700">
                 <div>
                   <div className="font-bold text-md text-white">{p.name}</div>
-                  <div className="text-[10px] text-zinc-500">
-                    {ROLES[p.role]?.name || "Smuggler"}
-                  </div>
                 </div>
                 {i === 0 && (
                   <div className="flex items-center gap-1 text-yellow-500 text-[10px] font-bold uppercase tracking-wider bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/20">
@@ -714,15 +712,15 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         return (
                           <div
                             key={idx}
-                            className={`flex items-center gap-2 p-1.5 rounded ${isKing ? "bg-yellow-500/10" : "bg-zinc-800"}`}
+                            className={`flex items-center gap-2 p-1.5 rounded ${isKing ? "bg-yellow-500/10" : "bg-pink-500/10"}`}
                           >
                             {isKing ? (
-                              <Crown size={12} className="text-yellow-500" />
+                              <Crown size={12} className="text-yellow-400" />
                             ) : (
-                              <User size={12} className="text-zinc-400" />
+                              <ChessKing size={12} className="text-pink-400" />
                             )}
                             <span
-                              className={`text-[10px] font-bold ${isKing ? "text-yellow-200" : "text-zinc-300"}`}
+                              className={`text-[10px] font-bold ${isKing ? "text-yellow-200" : "text-pink-200"}`}
                             >
                               {detail}
                             </span>
