@@ -716,28 +716,6 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                     </div>
                   )}
 
-                  {/* Contraband */}
-                  {contraband.length > 0 && (
-                    <div>
-                      <span className="text-[9px] text-red-500 font-bold uppercase mb-1 block">
-                        Contraband
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {contraband.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex items-center gap-1 bg-red-900/20 px-1.5 py-0.5 rounded border border-red-500/20 text-[10px] text-red-100"
-                          >
-                            <item.icon size={10} /> {item.name}{" "}
-                            <span className="font-mono opacity-60">
-                              x{item.qty}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {legal.length === 0 &&
                     royal.length === 0 &&
                     contraband.length === 0 && (
