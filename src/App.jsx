@@ -288,7 +288,7 @@ const GOODS = {
     penalty: 300,
     type: "ILLEGAL",
     icon: Utensils,
-    color: "text-cyan-500",
+    color: "text-cyan-200",
     legalType: "FOOD",
     legalCount: 2,
   },
@@ -299,7 +299,7 @@ const GOODS = {
     penalty: 400,
     type: "ILLEGAL",
     icon: Cross,
-    color: "text-cyan-500",
+    color: "text-cyan-300",
     legalType: "MEDS", // Counts as Meds
     legalCount: 2, // Counts as 3 Meds
   },
@@ -310,42 +310,9 @@ const GOODS = {
     penalty: 400,
     type: "ILLEGAL",
     icon: Shirt,
-    color: "text-cyan-500",
+    color: "text-cyan-400",
     legalType: "TEXTILE",
     legalCount: 2,
-  },
-  ROYAL_3_FOOD: {
-    id: "ROYAL_3_FOOD",
-    name: "Nectar of Gods",
-    val: 600,
-    penalty: 400,
-    type: "ILLEGAL",
-    icon: Utensils,
-    color: "text-yellow-500",
-    legalType: "FOOD",
-    legalCount: 3,
-  },
-  ROYAL_3_MEDS: {
-    id: "ROYAL_3_MEDS",
-    name: "Phoenix Serum",
-    val: 900,
-    penalty: 400,
-    type: "ILLEGAL",
-    icon: Cross,
-    color: "text-yellow-500",
-    legalType: "MEDS", // Counts as Meds
-    legalCount: 3, // Counts as 3 Meds
-  },
-  ROYAL_3_TEXTILE: {
-    id: "ROYAL_3_TEXTILE",
-    name: "Astral Velvet",
-    val: 900,
-    penalty: 400,
-    type: "ILLEGAL",
-    icon: Shirt,
-    color: "text-yellow-500",
-    legalType: "TEXTILE",
-    legalCount: 3,
   },
   ROYAL_2_PARTS: {
     id: "ROYAL_2_PARTS",
@@ -358,7 +325,39 @@ const GOODS = {
     legalType: "PARTS",
     legalCount: 2,
   },
-
+  ROYAL_3_FOOD: {
+    id: "ROYAL_3_FOOD",
+    name: "Nectar of Gods",
+    val: 600,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Utensils,
+    color: "text-yellow-200",
+    legalType: "FOOD",
+    legalCount: 3,
+  },
+  ROYAL_3_MEDS: {
+    id: "ROYAL_3_MEDS",
+    name: "Phoenix Serum",
+    val: 900,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Cross,
+    color: "text-yellow-300",
+    legalType: "MEDS", // Counts as Meds
+    legalCount: 3, // Counts as 3 Meds
+  },
+  ROYAL_3_TEXTILE: {
+    id: "ROYAL_3_TEXTILE",
+    name: "Astral Velvet",
+    val: 900,
+    penalty: 400,
+    type: "ILLEGAL",
+    icon: Shirt,
+    color: "text-yellow-400",
+    legalType: "TEXTILE",
+    legalCount: 3,
+  },
   // --- SPECIAL ---
   TRAP: {
     id: "TRAP",
@@ -367,7 +366,7 @@ const GOODS = {
     penalty: 0,
     type: "TRAP",
     icon: Bomb,
-    color: "text-orange-600",
+    color: "text-orange-400",
     desc: "If opened: Inspector pays $200",
   },
 };
