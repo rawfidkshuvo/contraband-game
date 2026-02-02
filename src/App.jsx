@@ -424,7 +424,7 @@ const generateDeck = (playerCount, gameLength = "SHORT") => {
   });
 
   // Add Traps (1 per player * multiplier)
-  for (let i = 0; i < playerCount * multiplier; i++) deck.push("TRAP");
+  for (let i = 0; i < playerCount; i++) deck.push("TRAP");
 
   return deck;
 };
