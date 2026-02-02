@@ -799,10 +799,9 @@ const ReportCard = ({ players, roundData, isFinal }) => {
         let totalMarketSpend = 0;
         let marketBreakdown = [];
 
-        // King/Queen Data
+        // King/Queen Data SAFE ACCESS
         const kqIncome = p.kqIncome || 0;
         const kqDetails = p.kqDetails || [];
-
         const stash = p.stash || [];
 
         // Aggregate per-round stats
@@ -876,11 +875,14 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           }
         });
 
-        const total = Math.floor(p.coins + stashTotal - BANK_LOAN + kqIncome);
+        // 1. SAFE STASH CALCULATION
         const stashTotal = stash.reduce(
-          (acc, c) => acc + (GOODS[c]?.val || 0),
+          (acc, c) => acc + (GOODS[c]?.val || 0), // ?.val prevents crash on invalid ID
           0,
         );
+
+        // 2. SAFE TOTAL CALCULATION
+        const total = Math.floor(p.coins - BANK_LOAN + kqIncome);
 
         return {
           id: p.id,
@@ -1528,54 +1530,54 @@ const Card = ({ typeId, small, selected, onClick, faceDown }) => {
 
 const calculateKingQueenBonuses = (players) => {
   const legalTypes = ["MEDS", "FOOD", "PARTS", "TEXTILE"];
-  const bonuses = {}; // { playerId: { income: 0, details: [] } }
+  const bonuses = {};
 
   players.forEach((p) => {
     bonuses[p.id] = { income: 0, details: [] };
   });
 
   legalTypes.forEach((type) => {
-    // 1. Count quantities for this type per player
     const counts = players.map((p) => {
       let count = 0;
-      p.stash.forEach((itemId) => {
+      // FIX: Safe array access + Safe item lookup
+      (p.stash || []).forEach((itemId) => {
         const item = GOODS[itemId];
-        if (item.id === type) count += 1; // Standard Legal
-        if (item.legalType === type) count += item.legalCount || 0; // Royal Good
+        if (!item) return; // Skip invalid items to prevent crash
+
+        if (item.id === type) count += 1;
+        if (item.legalType === type) count += item.legalCount || 0;
       });
       return { id: p.id, count, name: p.name };
     });
 
-    // 2. Sort by count descending
     counts.sort((a, b) => b.count - a.count);
 
-    // 3. Determine King (1st) and Queen (2nd)
+    if (counts.length === 0) return; // Safety check
+
     const kingCount = counts[0].count;
-    if (kingCount === 0) return; // No one collected this
+    if (kingCount === 0) return;
 
     const kings = counts.filter((c) => c.count === kingCount);
     const queens = counts.filter((c) => c.count < kingCount && c.count > 0);
 
-    // Determine Queen Count (highest remaining)
     const queenCount = queens.length > 0 ? queens[0].count : 0;
     const actualQueens = queens.filter((c) => c.count === queenCount);
 
-    const kBonusVal = GOODS[type].kingBonus;
-    const qBonusVal = GOODS[type].queenBonus;
+    const kBonusVal = GOODS[type]?.kingBonus || 0; // Safe access
+    const qBonusVal = GOODS[type]?.queenBonus || 0; // Safe access
 
-    // Apply King Bonus
     kings.forEach((k) => {
       bonuses[k.id].income += kBonusVal;
-      bonuses[k.id].details.push(`King of ${GOODS[type].name} (+${kBonusVal})`);
+      bonuses[k.id].details.push(
+        `King of ${GOODS[type]?.name} (+${kBonusVal})`,
+      );
     });
 
-    // Apply Queen Bonus (Only if no tie for King took all the glory?
-    // Rule variation: Usually if tie for King, no Queen awarded. We will follow that.)
     if (kings.length === 1 && actualQueens.length > 0) {
       actualQueens.forEach((q) => {
         bonuses[q.id].income += qBonusVal;
         bonuses[q.id].details.push(
-          `Queen of ${GOODS[type].name} (+${qBonusVal})`,
+          `Queen of ${GOODS[type]?.name} (+${qBonusVal})`,
         );
       });
     }
@@ -3090,29 +3092,24 @@ export default function ContrabandGame() {
 
     // --- SCENARIO A: GAME OVER ---
     if (nextRound > inspectorOrder.length) {
-      // Use inspectorOrder.length instead of players.length
-
-      // CALCULATE KING/QUEEN BONUSES
       const kqBonuses = calculateKingQueenBonuses(players);
 
       const finalScores = players
         .map((p) => {
-          const bonusData = kqBonuses[p.id];
-          // 1. CALCULATE STASH VALUE
-          const stashTotal = p.stash.reduce(
-            (acc, c) => acc + (GOODS[c]?.val || 0),
-            0
+          const bonusData = kqBonuses[p.id] || { income: 0, details: [] }; // Safety fallback
+
+          // SAFE STASH CALCULATION
+          const stashTotal = (p.stash || []).reduce(
+            (acc, c) => acc + (GOODS[c]?.val || 0), // ?.val is crucial here
+            0,
           );
 
-          // 2. ADD STASH TO FINAL TOTAL
-          const finalTotal = Math.floor(
-            p.coins + stashTotal - BANK_LOAN + bonusData.income
-          );
+          const finalTotal = Math.floor(p.coins - BANK_LOAN + bonusData.income);
 
           return {
             ...p,
             finalScore: finalTotal,
-            kqDetails: bonusData.details, // Save for display
+            kqDetails: bonusData.details,
             kqIncome: bonusData.income,
             ready: false,
           };
