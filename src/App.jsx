@@ -132,7 +132,7 @@ const EVENTS = {
     name: "War Zone",
     desc: "Weapons & Machinery value x2.", // Updated Description
     multiplier: 2,
-    target: ["WEAPON", "PARTS", "ROYAL_PARTS"], // Now an Array
+    target: ["WEAPON", "PARTS", "ROYAL_2_PARTS"], // Now an Array
   },
   PANDEMIC: {
     id: "PANDEMIC",
@@ -142,10 +142,10 @@ const EVENTS = {
     target: [
       "MEDS",
       "FOOD",
-      "ROYAL_FOOD_2",
-      "ROYAL_FOOD_3",
-      "ROYAL_MED_2",
-      "ROYAL_MED_3",
+      "ROYAL_2_FOOD",
+      "ROYAL_3_FOOD",
+      "ROYAL_2_MED",
+      "ROYAL_3_MED",
     ], // Now an Array
   },
   CRACKDOWN: {
@@ -281,8 +281,8 @@ const GOODS = {
   },
 
   // --- ROYAL GOODS (Contraband that counts as Legal for Bonuses) ---
-  ROYAL_FOOD_2: {
-    id: "ROYAL_FOOD_2",
+  ROYAL_2_FOOD: {
+    id: "ROYAL_2_FOOD",
     name: "Ambrosia",
     val: 400,
     penalty: 300,
@@ -292,8 +292,8 @@ const GOODS = {
     legalType: "FOOD",
     legalCount: 2,
   },
-  ROYAL_MEDS_2: {
-    id: "ROYAL_MEDS_2",
+  ROYAL_2_MEDS: {
+    id: "ROYAL_2_MEDS",
     name: "Panacea Vial",
     val: 600,
     penalty: 400,
@@ -303,8 +303,8 @@ const GOODS = {
     legalType: "MEDS", // Counts as Meds
     legalCount: 2, // Counts as 3 Meds
   },
-  ROYAL_TEXTILE_2: {
-    id: "ROYAL_TEXTILE_2",
+  ROYAL_2_TEXTILE: {
+    id: "ROYAL_2_TEXTILE",
     name: "Neo-Silk",
     val: 600,
     penalty: 400,
@@ -314,8 +314,8 @@ const GOODS = {
     legalType: "TEXTILE",
     legalCount: 2,
   },
-  ROYAL_FOOD_3: {
-    id: "ROYAL_FOOD_3",
+  ROYAL_3_FOOD: {
+    id: "ROYAL_3_FOOD",
     name: "Nectar of Gods",
     val: 600,
     penalty: 400,
@@ -325,8 +325,8 @@ const GOODS = {
     legalType: "FOOD",
     legalCount: 3,
   },
-  ROYAL_MEDS_3: {
-    id: "ROYAL_MEDS_3",
+  ROYAL_3_MEDS: {
+    id: "ROYAL_3_MEDS",
     name: "Phoenix Serum",
     val: 900,
     penalty: 400,
@@ -336,8 +336,8 @@ const GOODS = {
     legalType: "MEDS", // Counts as Meds
     legalCount: 3, // Counts as 3 Meds
   },
-  ROYAL_TEXTILE_3: {
-    id: "ROYAL_TEXTILE_3",
+  ROYAL_3_TEXTILE: {
+    id: "ROYAL_3_TEXTILE",
     name: "Astral Velvet",
     val: 900,
     penalty: 400,
@@ -347,8 +347,8 @@ const GOODS = {
     legalType: "TEXTILE",
     legalCount: 3,
   },
-  ROYAL_PARTS: {
-    id: "ROYAL_PARTS",
+  ROYAL_2_PARTS: {
+    id: "ROYAL_2_PARTS",
     name: "Quantum Gear",
     val: 800,
     penalty: 400,
@@ -406,13 +406,13 @@ const generateDeck = (playerCount) => {
     NARCO: 2 * playerCount,
     SPICE: 1 * playerCount,
 
-    ROYAL_MEDS_2: 2,
-    ROYAL_FOOD_2: 2,
-    ROYAL_TEXTILE_2: 2,
-    ROYAL_PARTS: 2,
-    ROYAL_MEDS_3: 1,
-    ROYAL_FOOD_3: 2,
-    ROYAL_TEXTILE_3: 1,
+    ROYAL_2_MEDS: 2,
+    ROYAL_2_FOOD: 2,
+    ROYAL_2_TEXTILE: 2,
+    ROYAL_2_PARTS: 2,
+    ROYAL_3_MEDS: 1,
+    ROYAL_3_FOOD: 2,
+    ROYAL_3_TEXTILE: 1,
   };
 
   // Add standard cards
@@ -580,6 +580,8 @@ const ReportCard = ({ players, roundData, isFinal }) => {
           // Categorize and Count Items
           const legal = [];
           const royal = [];
+          const royalTwo = [];
+          const royalThree = [];
           const contraband = [];
 
           const counts = {};
@@ -595,6 +597,11 @@ const ReportCard = ({ players, roundData, isFinal }) => {
 
             if (item.id.startsWith("ROYAL_")) {
               royal.push(entry);
+            }
+            if (item.id.startsWith("ROYAL_2")) {
+              royalTwo.push(entry);
+            } else if (item.id.startsWith("ROYAL_3")) {
+              royalThree.push(entry);
             } else if (item.type === "ILLEGAL") {
               contraband.push(entry);
             } else if (item.type === "LEGAL") {
@@ -661,10 +668,43 @@ const ReportCard = ({ players, roundData, isFinal }) => {
                         Royal Goods
                       </span>
                       <div className="flex flex-wrap gap-1.5">
-                        {royal.map((item) => (
+                        {royalThree.map((item) => (
                           <div
                             key={item.id}
                             className="flex items-center gap-1 bg-yellow-900/20 px-1.5 py-0.5 rounded border border-yellow-500/20 text-[10px] text-yellow-100"
+                          >
+                            <item.icon size={10} /> {item.name}{" "}
+                            <span className="font-mono opacity-60">
+                              x{item.qty}
+                            </span>
+                          </div>
+                        ))}
+                        {royalTwo.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-1 bg-cyan-900/20 px-1.5 py-0.5 rounded border border-cyan-500/20 text-[10px] text-cyan-100"
+                          >
+                            <item.icon size={10} /> {item.name}{" "}
+                            <span className="font-mono opacity-60">
+                              x{item.qty}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contraband */}
+                  {contraband.length > 0 && (
+                    <div>
+                      <span className="text-[9px] text-red-500 font-bold uppercase mb-1 block">
+                        Contraband
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {contraband.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-1 bg-red-900/20 px-1.5 py-0.5 rounded border border-red-500/20 text-[10px] text-red-100"
                           >
                             <item.icon size={10} /> {item.name}{" "}
                             <span className="font-mono opacity-60">
