@@ -60,6 +60,7 @@ import {
   ChevronRight,
   TrendingDown,
   Trash,
+  Sparkle,
   Sparkles,
   Copy,
   Loader,
@@ -130,14 +131,14 @@ const EVENTS = {
   WAR: {
     id: "WAR",
     name: "War Zone",
-    desc: "Weapons & Machinery value x2.", // Updated Description
+    desc: "Weapons value x2.",
     multiplier: 2,
-    target: ["WEAPON", "PARTS", "ROYAL_2_PARTS"], // Now an Array
+    target: ["WEAPON_1", "WEAPON_2" ],
   },
   PANDEMIC: {
     id: "PANDEMIC",
     name: "Pandemic",
-    desc: "Meds & Rations value x2.", // Updated Description
+    desc: "Meds & Rations value x2.",
     multiplier: 2,
     target: [
       "MEDS",
@@ -146,8 +147,37 @@ const EVENTS = {
       "ROYAL_3_FOOD",
       "ROYAL_2_MEDS",
       "ROYAL_3_MEDS",
-    ], // Now an Array
+    ],
   },
+  // --- NEW EVENTS ---
+  INDUSTRIAL_REV: {
+    id: "INDUSTRIAL_REV",
+    name: "Industrial Boom",
+    desc: "Uniforms & Machinery value x2.",
+    multiplier: 2,
+    target: [
+      "TEXTILE",
+      "PARTS",
+      "ROYAL_2_TEXTILE",
+      "ROYAL_3_TEXTILE",
+      "ROYAL_2_PARTS",
+    ],
+  },
+  RECESSION: {
+    id: "RECESSION",
+    name: "Market Recession",
+    desc: "Contraband value -20%.",
+    multiplier: 0.8,
+    target: "ALL_ILLEGAL", // Special keyword we will handle
+  },
+  DEFLATION: {
+    id: "DEFLATION",
+    name: "Deflation",
+    desc: "Legal Goods value -20%.",
+    multiplier: 0.8,
+    target: "ALL_LEGAL", // Special keyword we will handle
+  },
+  // ------------------
   CRACKDOWN: {
     id: "CRACKDOWN",
     name: "Police Crackdown",
@@ -243,17 +273,17 @@ const GOODS = {
   },
 
   // --- CONTRABAND ---
-  CHIP: {
-    id: "CHIP",
-    name: "AI Core",
+  WEAPON_1: {
+    id: "WEAPON_1",
+    name: "Laser Gun",
     val: 600,
     penalty: 400,
     type: "ILLEGAL",
-    icon: Cpu,
+    icon: Sparkle,
     color: "text-red-200",
   },
-  WEAPON: {
-    id: "WEAPON",
+  WEAPON_2: {
+    id: "WEAPON_2",
     name: "Plasma Rifle",
     val: 700,
     penalty: 400,
@@ -261,13 +291,13 @@ const GOODS = {
     icon: Zap,
     color: "text-red-300",
   },
-  NARCO: {
-    id: "NARCO",
-    name: "Stims",
+  CHIP: {
+    id: "CHIP",
+    name: "Neural Chip",
     val: 800,
     penalty: 400,
     type: "ILLEGAL",
-    icon: Skull,
+    icon: Cpu,
     color: "text-red-400",
   },
   SPICE: {
@@ -403,9 +433,9 @@ const generateDeck = (playerCount, gameLength = "SHORT") => {
     PARTS: 6 * playerCount * multiplier,
     TEXTILE: 4 * playerCount * multiplier,
 
-    CHIP: 4 * playerCount * multiplier,
-    WEAPON: 4 * playerCount * multiplier,
-    NARCO: 2 * playerCount * multiplier,
+    WEAPON_1: 4 * playerCount * multiplier,
+    WEAPON_2: 4 * playerCount * multiplier,
+    CHIP: 2 * playerCount * multiplier,
     SPICE: 2 * playerCount * multiplier,
 
     // Royal Goods
@@ -2009,7 +2039,7 @@ export default function ContrabandGame() {
 
   // Interaction States
   const [selectedCards, setSelectedCards] = useState([]);
-  const [declaredType, setDeclaredType] = useState("MEDS");
+  const [declaredType, setDeclaredType] = useState("FOOD");
   const [bribeAmount, setBribeAmount] = useState(0);
   const [lastBribeUpdate, setLastBribeUpdate] = useState(0);
 
@@ -2530,48 +2560,54 @@ export default function ContrabandGame() {
 
     let stats = { ...gameState.currentRoundStats };
 
-    // --- HELPER 1: Calculate Sales Event Bonus ---
+    // --- HELPER 1: Calculate Sales Event Bonus (UPDATED) ---
     const calculateSaleStats = (items) => {
       let total = 0;
       let impact = 0;
       items.forEach((c) => {
-        let base = GOODS[c].val;
+        const itemInfo = GOODS[c];
+        if (!itemInfo) return;
+
+        let base = itemInfo.val;
         let final = base;
-        if (
-          Array.isArray(currentEvent.target)
-            ? currentEvent.target.includes(c)
-            : currentEvent.target === c
-        ) {
-          final = base * currentEvent.multiplier;
+
+        // Check 1: Is this specific item ID targeted? (War, Pandemic, Ind. Rev)
+        const isIdMatch = Array.isArray(currentEvent.target)
+          ? currentEvent.target.includes(c)
+          : currentEvent.target === c;
+
+        // Check 2: Is the category targeted? (Recession, Deflation)
+        const isCategoryMatch =
+          (currentEvent.target === "ALL_ILLEGAL" &&
+            itemInfo.type === "ILLEGAL") ||
+          (currentEvent.target === "ALL_LEGAL" && itemInfo.type === "LEGAL");
+
+        if (isIdMatch || isCategoryMatch) {
+          final = Math.floor(base * currentEvent.multiplier);
         }
+
         total += final;
-        impact += final - base; // Always positive or zero
+        impact += final - base;
       });
       return { total, impact };
     };
 
     // --- HELPER 2: Calculate Fine Event Impact ---
-    const calculateFineStats = (items) => {
+    const calculateFineStats = (items, isSmugglerPaying) => {
       let baseFine = items.reduce((sum, c) => sum + GOODS[c].penalty, 0);
       let roleSavings = 0;
 
-      // Apply Role Logic First (Base fine reduction)
-      if (target.role === "DIPLOMAT") {
+      // Diplomat Fix: Only apply discount if Smuggler is PAYING
+      if (isSmugglerPaying && target.role === "DIPLOMAT") {
         roleSavings = baseFine * 0.5;
         baseFine *= 0.5;
       }
 
-      // Apply Event Logic
       let finalFine = baseFine;
       if (currentEvent.id === "CRACKDOWN") finalFine *= 2;
       if (currentEvent.id === "FREE_TRADE") finalFine *= 0.5;
 
-      // Impact = (What I would have paid without event) - (What I actually paid)
-      // Positive = I saved money. Negative = I paid extra.
-      // Crackdown: Base 1000 - Paid 2000 = -1000 Impact
-      // Free Trade: Base 1000 - Paid 500 = +500 Impact
       const eventImpact = baseFine - finalFine;
-
       return { finalFine, roleSavings, eventImpact };
     };
 
@@ -2607,7 +2643,7 @@ export default function ContrabandGame() {
       }
     };
 
-    // Peek Logic (Unchanged)
+    // --- REST OF LOGIC (Unchanged) ---
     if (action === "PEEK") {
       if (target.loadedCrate.scanned) return;
       const randomCard =
@@ -2690,7 +2726,7 @@ export default function ContrabandGame() {
           });
       }
 
-      // SALES CALCULATION
+      // SALES CALCULATION (Uses new Helper 1)
       const { total: saleValue, impact } = calculateSaleStats(
         target.loadedCrate.cards,
       );
@@ -2698,12 +2734,12 @@ export default function ContrabandGame() {
 
       stats = getUpdatedStats(stats, target.id, {
         income: saleValue,
-        eventImpact: impact, // Pass positive sales impact
+        eventImpact: impact,
         transaction: {
           label: "Goods Sold",
           amount: saleValue,
           items: target.loadedCrate.cards,
-          detail: impact > 0 ? `Event Bonus: +$${impact}` : "",
+          detail: impact !== 0 ? `Event Impact: ${impact > 0 ? "+" : ""}$${impact}` : "",
         },
       });
 
@@ -2755,7 +2791,7 @@ export default function ContrabandGame() {
             label: "Survivors Sold",
             amount: saleValue,
             items: remainingCards,
-            detail: impact > 0 ? `Event Bonus: +$${impact}` : "",
+            detail: impact !== 0 ? `Event Impact: ${impact > 0 ? "+" : ""}$${impact}` : "",
           },
         });
         players[targetIdx].stash.push(...remainingCards);
@@ -2778,10 +2814,7 @@ export default function ContrabandGame() {
         );
 
         if (targetHasConceal && illegalCards.length > 0) {
-          // 1. Sort illegal cards by Value (Ascending) so the last one is the most expensive
           illegalCards.sort((a, b) => GOODS[a].val - GOODS[b].val);
-
-          // 2. Remove the last one (Highest Value) - It is now "Safe"
           const savedCard = illegalCards.pop();
           logs.push({
             id: Date.now().toString(),
@@ -2792,7 +2825,10 @@ export default function ContrabandGame() {
 
         if (illegalCards.length === 0) {
           // CLEAN - Calculate Fine & Impact
-          const { finalFine: penalty, eventImpact } = calculateFineStats(cards);
+          const { finalFine: penalty, eventImpact } = calculateFineStats(
+            cards,
+            false,
+          );
 
           players[inspectorIdx].coins -= penalty;
           players[targetIdx].coins += penalty;
@@ -2807,7 +2843,7 @@ export default function ContrabandGame() {
           });
           stats = getUpdatedStats(stats, target.id, {
             income: penalty,
-            eventImpact: eventImpact, // Pass impact (Positive if Crackdown, Negative if Free Trade for Clean reward context)
+            eventImpact: eventImpact,
             transaction: {
               label: "Clean Bonus",
               amount: penalty,
@@ -2821,12 +2857,12 @@ export default function ContrabandGame() {
 
           stats = getUpdatedStats(stats, target.id, {
             income: saleValue,
-            eventImpact: saleImpact, // Accumulate Sales impact
+            eventImpact: saleImpact,
             transaction: {
               label: "Goods Sold",
               amount: saleValue,
               items: cards,
-              detail: saleImpact > 0 ? `Event Bonus: +$${saleImpact}` : "",
+              detail: saleImpact !== 0 ? `Event Impact: ${saleImpact > 0 ? "+" : ""}$${saleImpact}` : "",
             },
           });
 
@@ -2860,16 +2896,18 @@ export default function ContrabandGame() {
           });
 
           // Calculate Fine on Seized items
-          const { finalFine, roleSavings, eventImpact } =
-            calculateFineStats(seized);
+          const { finalFine, roleSavings, eventImpact } = calculateFineStats(
+            seized,
+            true,
+          );
 
           players[targetIdx].coins -= finalFine;
           players[inspectorIdx].coins += finalFine;
 
           stats = getUpdatedStats(stats, target.id, {
             expense: finalFine,
-            roleBonus: roleSavings, // Track Diplomat Savings
-            eventImpact: eventImpact, // Track Crackdown/Free Trade impact
+            roleBonus: roleSavings,
+            eventImpact: eventImpact,
             transaction: {
               label: "Fine Paid",
               amount: -finalFine,
@@ -2885,7 +2923,6 @@ export default function ContrabandGame() {
             },
           });
 
-          // Sell Kept Goods
           const { total: saleValue, impact: saleImpact } =
             calculateSaleStats(kept);
           players[targetIdx].coins += saleValue;
@@ -2893,12 +2930,12 @@ export default function ContrabandGame() {
           if (saleValue > 0)
             stats = getUpdatedStats(stats, target.id, {
               income: saleValue,
-              eventImpact: saleImpact, // Accumulate sales impact
+              eventImpact: saleImpact,
               transaction: {
                 label: "Kept Goods Sold",
                 amount: saleValue,
                 items: kept,
-                detail: saleImpact > 0 ? `Event Bonus: +$${saleImpact}` : "",
+                detail: saleImpact !== 0 ? `Event Impact: ${saleImpact > 0 ? "+" : ""}$${saleImpact}` : "",
               },
             });
 
@@ -3997,7 +4034,7 @@ export default function ContrabandGame() {
                           Declare As
                         </label>
                         <div className="grid grid-cols-4 gap-1">
-                          {["MEDS", "FOOD", "PARTS", "TEXTILE"].map((type) => (
+                          {["FOOD", "MEDS", "TEXTILE", "PARTS"].map((type) => (
                             <button
                               key={type}
                               onClick={() => setDeclaredType(type)}
